@@ -98,3 +98,12 @@
 - Tests run: focused RED→GREEN subprocess tests for corrupt PNG/PPTX, empty PPTX, unsupported extensions, and missing output parents; full pytest suite; offline package build; CLI help; example validate/build/verify; `git diff --check`.
 - Open issues: CI currently has no Windows job.
 - Next action: implement Task 3 Linux and Windows CI.
+
+## 2026-09-21 — Task 3 Linux and Windows CI
+
+- Task: Add locked GitHub Actions checks for Python 3.12 on Ubuntu and Windows.
+- Decisions: use one fail-independent OS matrix; install from `uv.lock` with `uv sync --frozen --extra dev`; run pytest, package build, and CLI help on both systems; keep LibreOffice rendering outside the Windows job.
+- Files changed: GitHub Actions workflow, workflow regression test, README CI scope, and this project log.
+- Tests run: focused RED→GREEN workflow test; local YAML parsing; full pytest suite; offline package build; CLI help; example validate/build/verify; `git diff --check`.
+- Open issues: remote Ubuntu and Windows jobs must pass on the exact pushed commit before Task 3 is closed.
+- Next action: push the Task 3 commit and verify both GitHub Actions jobs by commit SHA.

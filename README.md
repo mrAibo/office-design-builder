@@ -318,6 +318,8 @@ uv run --offline python -m office_design_builder.cli --help
 git diff --check
 ```
 
+GitHub Actions runs the locked test, package-build, and CLI-help gates on Python 3.12 for both Ubuntu and Windows. LibreOffice rendering is not part of the Windows job; the cross-platform suite verifies structure and deterministic package behavior.
+
 Generated build directories and user documents are intentionally not tracked.
 
 ## License
