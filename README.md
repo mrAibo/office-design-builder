@@ -241,7 +241,9 @@ odb verify --help
 Successful commands return exit code `0`. Handled input and validation errors return exit code `2` and start with a stable identifier:
 
 - `INPUT_NOT_FOUND`: a required local input path does not exist.
+- `INVALID_REFERENCE`: an image or PPTX reference is corrupt, unsupported, unreadable, or contains no slides.
 - `INVALID_SPEC`: JSON is malformed or does not satisfy the version 1 contract.
+- `OUTPUT_WRITE_FAILED`: the requested fingerprint or presentation output cannot be written.
 - `VERIFY_FAILED`: the PPTX cannot be read, has no slides, or has no editable text shapes.
 
 Example:
@@ -250,7 +252,7 @@ Example:
 INVALID_SPEC: presentation.json: slides[0] missing required fields: title
 ```
 
-Some library-level failures, such as a corrupt reference passed to `inspect`, are not yet converted to these stable errors.
+`odb inspect` accepts only `.png`, `.jpg`, `.jpeg`, and `.pptx` references. Create the output parent directory and ensure it is writable before running `inspect` or `build`.
 
 ## Troubleshooting
 

@@ -8,7 +8,16 @@ import sys
 from pathlib import Path
 from typing import Any
 
-from office_design_builder.errors import InputNotFoundError, InvalidSpecError, VerifyError
+from PIL import UnidentifiedImageError
+from pptx.exc import PackageNotFoundError
+
+from office_design_builder.errors import (
+    InputNotFoundError,
+    InvalidReferenceError,
+    InvalidSpecError,
+    OutputWriteError,
+    VerifyError,
+)
 from office_design_builder.inspectors.image import inspect_image
 from office_design_builder.inspectors.pptx import inspect_pptx
 from office_design_builder.models import PresentationSpecV1, StyleFingerprintV1
@@ -53,18 +62,44 @@ def main(argv: list[str] | None = None) -> int:
         elif arguments.command == "inspect":
             if not arguments.reference.exists():
                 raise InputNotFoundError(str(arguments.reference))
-            inspector = inspect_pptx if arguments.reference.suffix.lower() == ".pptx" else inspect_image
-            fingerprint = inspector(arguments.reference)
-            arguments.output.write_text(
-                json.dumps(fingerprint.to_dict(), indent=2, sort_keys=True) + "\n"
-            )
+            suffix = arguments.reference.suffix.lower()
+            inspectors = {
+                ".png": inspect_image,
+                ".jpg": inspect_image,
+                ".jpeg": inspect_image,
+                ".pptx": inspect_pptx,
+            }
+            if suffix not in inspectors:
+                raise InvalidReferenceError(f"unsupported extension: {suffix or '<none>'}")
+            inspector = inspectors[suffix]
+            try:
+                fingerprint = inspector(arguments.reference)
+            except (OSError, ValueError, KeyError, PackageNotFoundError, UnidentifiedImageError) as exc:
+                raise InvalidReferenceError(
+                    f"{arguments.reference}: {exc}"
+                ) from exc
+            try:
+                arguments.output.write_text(
+                    json.dumps(fingerprint.to_dict(), indent=2, sort_keys=True) + "\n"
+                )
+            except OSError as exc:
+                raise OutputWriteError(f"{arguments.output}: {exc}") from exc
         elif arguments.command == "build":
             spec = PresentationSpecV1.from_dict(_read_json(arguments.spec))
             fingerprint = StyleFingerprintV1.from_dict(_read_json(arguments.fingerprint))
-            build_presentation(spec, fingerprint, arguments.output)
+            try:
+                build_presentation(spec, fingerprint, arguments.output)
+            except OSError as exc:
+                raise OutputWriteError(f"{arguments.output}: {exc}") from exc
         elif arguments.command == "verify":
             print(json.dumps(verify_pptx(arguments.artifact), sort_keys=True))
-    except (InputNotFoundError, InvalidSpecError, VerifyError) as exc:
+    except (
+        InputNotFoundError,
+        InvalidReferenceError,
+        InvalidSpecError,
+        OutputWriteError,
+        VerifyError,
+    ) as exc:
         source = getattr(
             arguments,
             "spec",

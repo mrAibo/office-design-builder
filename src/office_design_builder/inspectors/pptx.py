@@ -17,6 +17,8 @@ def inspect_pptx(path: Path) -> StyleFingerprintV1:
     presentation = Presentation(str(path))
     if presentation.slide_width is None or presentation.slide_height is None:
         raise ValueError("PPTX slide dimensions are unavailable")
+    if len(presentation.slides) == 0:
+        raise ValueError("PPTX contains no slides")
     width = presentation.slide_width / _EMU_PER_INCH
     height = presentation.slide_height / _EMU_PER_INCH
 

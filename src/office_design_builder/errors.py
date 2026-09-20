@@ -7,6 +7,18 @@ class InvalidSpecError(ValueError):
     code = "INVALID_SPEC"
 
 
+class InvalidReferenceError(ValueError):
+    """A visual reference is unsupported or cannot be inspected."""
+
+    code = "INVALID_REFERENCE"
+
+
+class OutputWriteError(OSError):
+    """A requested output artifact cannot be written."""
+
+    code = "OUTPUT_WRITE_FAILED"
+
+
 class VerifyError(ValueError):
     """A generated artifact fails structural verification."""
 

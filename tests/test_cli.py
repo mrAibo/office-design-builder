@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 
 from PIL import Image
+from pptx import Presentation
 
 
 def run_cli(*arguments: str) -> subprocess.CompletedProcess[str]:
@@ -45,6 +46,75 @@ def test_inspect_reports_stable_error_for_missing_input(tmp_path: Path) -> None:
     assert result.returncode != 0
     assert result.stderr.startswith("INPUT_NOT_FOUND:")
     assert str(missing) in result.stderr
+
+
+def test_inspect_reports_stable_error_for_corrupt_png(tmp_path: Path) -> None:
+    reference = tmp_path / "broken.png"
+    output = tmp_path / "fingerprint.json"
+    reference.write_bytes(b"not a png")
+
+    result = run_cli("inspect", str(reference), "--output", str(output))
+
+    assert result.returncode == 2
+    assert result.stderr.startswith("INVALID_REFERENCE:")
+    assert str(reference) in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not output.exists()
+
+
+def test_inspect_reports_stable_error_for_corrupt_pptx(tmp_path: Path) -> None:
+    reference = tmp_path / "broken.pptx"
+    output = tmp_path / "fingerprint.json"
+    reference.write_bytes(b"not a pptx")
+
+    result = run_cli("inspect", str(reference), "--output", str(output))
+
+    assert result.returncode == 2
+    assert result.stderr.startswith("INVALID_REFERENCE:")
+    assert str(reference) in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not output.exists()
+
+
+def test_inspect_rejects_empty_pptx(tmp_path: Path) -> None:
+    reference = tmp_path / "empty.pptx"
+    output = tmp_path / "fingerprint.json"
+    Presentation().save(str(reference))
+
+    result = run_cli("inspect", str(reference), "--output", str(output))
+
+    assert result.returncode == 2
+    assert result.stderr.startswith("INVALID_REFERENCE:")
+    assert "contains no slides" in result.stderr
+    assert not output.exists()
+
+
+def test_inspect_rejects_unsupported_extension(tmp_path: Path) -> None:
+    reference = tmp_path / "reference.txt"
+    output = tmp_path / "fingerprint.json"
+    reference.write_text("not a supported reference")
+
+    result = run_cli("inspect", str(reference), "--output", str(output))
+
+    assert result.returncode == 2
+    assert result.stderr.startswith("INVALID_REFERENCE:")
+    assert "unsupported extension: .txt" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not output.exists()
+
+
+def test_inspect_reports_stable_error_when_output_parent_is_missing(tmp_path: Path) -> None:
+    reference = tmp_path / "reference.png"
+    output = tmp_path / "missing" / "fingerprint.json"
+    Image.new("RGB", (2, 2), color=(17, 34, 51)).save(reference)
+
+    result = run_cli("inspect", str(reference), "--output", str(output))
+
+    assert result.returncode == 2
+    assert result.stderr.startswith("OUTPUT_WRITE_FAILED:")
+    assert str(output) in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not output.exists()
 
 
 def test_inspect_writes_fingerprint_json(tmp_path: Path) -> None:
@@ -148,6 +218,25 @@ def test_build_reports_stable_error_for_invalid_fingerprint(tmp_path: Path) -> N
     assert result.stderr.startswith("INVALID_SPEC:")
     assert "palette" in result.stderr
     assert not output_path.exists()
+
+
+def test_build_reports_stable_error_when_output_parent_is_missing(tmp_path: Path) -> None:
+    output = tmp_path / "missing" / "presentation.pptx"
+
+    result = run_cli(
+        "build",
+        "examples/presentation.json",
+        "--fingerprint",
+        "examples/style-fingerprint.json",
+        "--output",
+        str(output),
+    )
+
+    assert result.returncode == 2
+    assert result.stderr.startswith("OUTPUT_WRITE_FAILED:")
+    assert str(output) in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not output.exists()
 
 
 def test_verify_reports_stable_error_for_invalid_package(tmp_path: Path) -> None:

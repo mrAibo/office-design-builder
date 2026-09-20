@@ -89,3 +89,12 @@
 - Tests run: focused RED→GREEN tests for each new rule; full pytest suite; offline package build; CLI help; example validate/build/verify; `git diff --check`.
 - Open issues: reference-file decoding and output-write failures are handled in Task 2.
 - Next action: implement Task 2 stable reference-inspection failures.
+
+## 2026-09-21 — Task 2 stable reference-inspection failures
+
+- Task: Convert corrupt, unsupported, semantically empty, and unwritable reference workflows into stable CLI failures.
+- Decisions: reserve `INPUT_NOT_FOUND` for absent inputs; use `INVALID_REFERENCE` for unreadable or unsupported references and empty PPTX files; use `OUTPUT_WRITE_FAILED` for fingerprint and presentation write failures.
+- Files changed: CLI and domain errors, PPTX inspector, CLI regression tests, README error documentation, and this project log.
+- Tests run: focused RED→GREEN subprocess tests for corrupt PNG/PPTX, empty PPTX, unsupported extensions, and missing output parents; full pytest suite; offline package build; CLI help; example validate/build/verify; `git diff --check`.
+- Open issues: CI currently has no Windows job.
+- Next action: implement Task 3 Linux and Windows CI.
