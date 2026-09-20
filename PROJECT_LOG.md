@@ -71,3 +71,12 @@
 - Tests run: focused RED→GREEN geometry and title-motif tests; full test/build/help/diff gates; example build/verify; LibreOffice rendering; visual review of both final slide PNGs.
 - Open issues: richer content-density strategies and additional layouts remain post-MVP work.
 - Next action: await explicit approval before creating or publishing a release tag.
+
+## 2026-09-20 — v0.1.0 publication and user documentation
+
+- Task: Publish the first release, verify downloaded assets, and replace the short README with an end-user guide.
+- Decisions: distribute through GitHub Releases; document installation from the wheel, both version 1 JSON contracts, command behavior, troubleshooting, and current limitations; keep developer gates in the same README.
+- Files changed: `README.md` and this project log.
+- Tests run: 21-test suite; offline sdist/wheel build; clean-environment install from the downloaded release wheel; checksum verification; deterministic test presentation build; structural and visual verification; README command and link checks.
+- Open issues: PyPI publication, Windows CI, stable handling of corrupt inspection inputs, deeper schema type validation, additional layouts, and visual verification automation remain future work.
+- Next action: prioritize post-v0.1.0 work from user feedback and the remaining issue list.
