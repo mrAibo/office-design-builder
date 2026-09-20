@@ -17,3 +17,12 @@
 - Tests run: eight pytest cases on Python 3.12; package sdist and wheel built offline with preinstalled build dependencies; `git diff --check`.
 - Open issues: the CLI entry point remains intentionally deferred to Task 5.
 - Next action: implement Task 2 image reference inspection using strict TDD.
+
+## 2026-09-20 — Task 2 image reference inspection
+
+- Task: Derive deterministic style fingerprints from PNG and JPEG references.
+- Decisions: Pillow median-cut quantization without dithering; palette ordering by frequency then hexadecimal color; generic typography defaults because font identity is not inferable from raster input.
+- Files changed: Pillow dependency/lock data, image inspector package, and generated-image tests.
+- Tests run: focused PNG and JPEG tests plus the full suite; offline package build; `git diff --check`.
+- Open issues: raster fingerprints intentionally provide no font-identity inference.
+- Next action: implement Task 3 PPTX reference inspection using strict TDD.
