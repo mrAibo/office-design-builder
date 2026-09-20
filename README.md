@@ -297,7 +297,7 @@ odb --help
 - Raster references do not reveal font identity or semantic layout.
 - OCR, charts, tables, images, animations, speaker notes, and template-preserving cloning are not implemented.
 - `verify` performs structural checks, not visual checks.
-- The package is distributed through GitHub Releases, not PyPI.
+- The package is currently distributed through GitHub Releases. Trusted Publishing for PyPI is prepared but not enabled; see [the publishing guide](docs/publishing.md).
 
 ## Development setup
 
@@ -319,6 +319,8 @@ git diff --check
 ```
 
 GitHub Actions runs the locked test, package-build, and CLI-help gates on Python 3.12 for both Ubuntu and Windows. LibreOffice rendering is not part of the Windows job; the cross-platform suite verifies structure and deterministic package behavior.
+
+The separate `Publish` workflow builds and checks distribution artifacts on pull requests. Matching version tags may publish only through the protected `pypi` environment and PyPI Trusted Publishing; repository setup and the first upload remain explicit human gates.
 
 Generated build directories and user documents are intentionally not tracked.
 

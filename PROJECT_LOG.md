@@ -105,5 +105,14 @@
 - Decisions: use one fail-independent OS matrix; install from `uv.lock` with `uv sync --frozen --extra dev`; run pytest, package build, and CLI help on both systems; keep LibreOffice rendering outside the Windows job.
 - Files changed: GitHub Actions workflow, workflow regression test, README CI scope, and this project log.
 - Tests run: focused RED→GREEN workflow test; local YAML parsing; full pytest suite; offline package build; CLI help; example validate/build/verify; `git diff --check`.
-- Open issues: remote Ubuntu and Windows jobs must pass on the exact pushed commit before Task 3 is closed.
-- Next action: push the Task 3 commit and verify both GitHub Actions jobs by commit SHA.
+- Open issues: none for Task 3. GitHub Actions run `35545580823` passed on exact commit `1235ed71acc8174729e9a7e9f2e3cdbd1bd3eb5e` for both `ubuntu-latest / Python 3.12` and `windows-latest / Python 3.12`.
+- Next action: prepare Task 4 PyPI publication and stop at its human gate.
+
+## 2026-09-21 — Task 4 PyPI publication preparation
+
+- Task: Prepare complete public package metadata, checked distributions, and a tag-gated PyPI Trusted Publishing workflow without uploading a release.
+- Decisions: use the protected GitHub environment `pypi`; scope `id-token: write` to the publish job; build and run `twine check` before publishing; never store a long-lived PyPI token; retain explicit approval for PyPI setup and first upload.
+- Files changed: package metadata and locked development dependencies, publish workflow and regression tests, publishing guide, README, and this project log.
+- Tests run: focused RED→GREEN metadata/workflow tests; local YAML parsing; full pytest suite; offline package build; `twine check`; CLI help; example validate/build/verify; `git diff --check`.
+- Open issues: the PyPI project/pending publisher and protected GitHub `pypi` environment are not configured; no package has been uploaded.
+- Next action: stop at the human gate and request approval before configuring PyPI/GitHub or creating the first publishing tag.

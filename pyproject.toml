@@ -9,6 +9,19 @@ description = "Generate editable Office artifacts from semantic specifications a
 readme = "README.md"
 requires-python = ">=3.12"
 license = { file = "LICENSE" }
+authors = [{ name = "Aleksej Voronin" }]
+keywords = ["office", "powerpoint", "pptx", "document-generation", "design"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Office/Business",
+  "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
   "Pillow>=11,<13",
   "python-pptx>=1,<2",
@@ -17,11 +30,18 @@ dependencies = [
 [project.scripts]
 odb = "office_design_builder.cli:main"
 
+[project.urls]
+Homepage = "https://github.com/mrAibo/office-design-builder"
+Documentation = "https://github.com/mrAibo/office-design-builder#readme"
+Issues = "https://github.com/mrAibo/office-design-builder/issues"
+Source = "https://github.com/mrAibo/office-design-builder"
+
 [project.optional-dependencies]
 dev = [
   "build>=1.2,<2",
   "pytest>=8,<9",
   "setuptools>=75,<76",
+  "twine>=6,<7",
   "wheel>=0.45,<1",
 ]
 
