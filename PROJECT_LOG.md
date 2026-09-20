@@ -44,3 +44,12 @@
 - Tests run: focused structural renderer test; RED→GREEN byte-determinism regression; full suite; offline package build; `git diff --check`.
 - Open issues: layout geometry is intentionally minimal and will need visual acceptance tuning with real fixtures.
 - Next action: implement Task 5 CLI and structural verification using strict TDD.
+
+## 2026-09-20 — Task 5 CLI and structural verification
+
+- Task: Expose `inspect`, `validate`, `build`, and `verify` commands with stable failures.
+- Decisions: stdlib argparse/JSON; stable `INVALID_SPEC`, `INPUT_NOT_FOUND`, and `VERIFY_FAILED` identifiers; structural read-back requires slides and editable text shapes.
+- Files changed: CLI entry point, verifier, error contracts, packaging command, and subprocess integration tests.
+- Tests run: focused RED→GREEN subprocess tests plus the full suite; offline package build; module and installed-script help; `git diff --check`.
+- Open issues: visual rendering verification remains optional until the real acceptance fixture in Task 6.
+- Next action: complete Task 6 documentation and end-to-end acceptance fixture.
