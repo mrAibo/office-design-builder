@@ -11,6 +11,7 @@ requires-python = ">=3.12"
 license = { file = "LICENSE" }
 dependencies = [
   "Pillow>=11,<13",
+  "python-pptx>=1,<2",
 ]
 
 [project.optional-dependencies]

@@ -26,3 +26,12 @@
 - Tests run: focused PNG and JPEG tests plus the full suite; offline package build; `git diff --check`.
 - Open issues: raster fingerprints intentionally provide no font-identity inference.
 - Next action: implement Task 3 PPTX reference inspection using strict TDD.
+
+## 2026-09-20 — Task 3 PPTX reference inspection
+
+- Task: Extract deterministic dimensions, layout inventory, and direct font/color evidence from PPTX references.
+- Decisions: inspect native text runs without subprocesses; normalize evidence through `StyleFingerprintV1`; fall back to generic sans-serif typography when no explicit font is present.
+- Files changed: python-pptx dependency/lock data, PPTX inspector, and generated-deck test.
+- Tests run: focused generated-PPTX test plus the full suite; offline package build; `git diff --check`.
+- Open issues: inherited theme colors/fonts are not yet resolved beyond directly materialized run evidence.
+- Next action: implement Task 4 editable PPTX rendering using strict TDD.
