@@ -116,3 +116,12 @@
 - Tests run: focused RED→GREEN metadata/workflow tests; local YAML parsing; full pytest suite; offline package build; `twine check`; CLI help; example validate/build/verify; `git diff --check`.
 - Open issues: the PyPI project/pending publisher and protected GitHub `pypi` environment are not configured; no package has been uploaded.
 - Next action: stop at the human gate and request approval before configuring PyPI/GitHub or creating the first publishing tag.
+
+## 2026-09-21 — v0.1.1 PyPI release candidate
+
+- Task: Execute the approved first PyPI publication as patch release `v0.1.1`.
+- Decisions: bump the package version before tagging; require the pending PyPI publisher to exist before pushing the release tag; do not fall back to an API token.
+- Files changed: package version, lockfile, publishing regression test, and this project log.
+- Tests run: focused RED→GREEN version test; full pytest suite; offline package build; `twine check`; CLI help; example validate/build/verify; `git diff --check`.
+- Open issues: GitHub environment `pypi` is configured and verified, but PyPI login is unavailable to the headless browser until credentials are added through the Hermes vault or the pending publisher is configured manually.
+- Next action: configure the pending PyPI publisher, then commit/tag/push `v0.1.1` and verify the upload from a clean environment.

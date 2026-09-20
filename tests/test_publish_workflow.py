@@ -8,6 +8,7 @@ ROOT = Path(__file__).parents[1]
 def test_public_package_metadata_is_complete() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]
 
+    assert project["version"] == "0.1.1"
     assert project["keywords"]
     assert "Development Status :: 3 - Alpha" in project["classifiers"]
     assert "Programming Language :: Python :: 3.12" in project["classifiers"]
