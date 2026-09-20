@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from math import isfinite
+from re import fullmatch
 from typing import Any
 
 from .errors import InvalidSpecError
@@ -11,6 +13,60 @@ from .errors import InvalidSpecError
 def _require_v1(version: str) -> None:
     if version != "1":
         raise InvalidSpecError(f"unsupported contract version: {version}")
+
+
+def _require_object(value: Any, path: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise InvalidSpecError(f"{path} must be an object")
+    return value
+
+
+def _require_positive_number(value: Any, path: str) -> None:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise InvalidSpecError(f"{path} must be a number")
+    if not isfinite(value) or value <= 0:
+        raise InvalidSpecError(f"{path} must be a finite positive number")
+
+
+def _require_nonempty_string(value: Any, path: str) -> None:
+    if not isinstance(value, str) or not value.strip():
+        raise InvalidSpecError(f"{path} must be a non-empty string")
+
+
+def _require_nonempty_list(value: Any, path: str) -> list[Any]:
+    if not isinstance(value, list) or not value:
+        raise InvalidSpecError(f"{path} must be a non-empty array")
+    return value
+
+
+def _require_nonempty_string_list(value: Any, path: str) -> None:
+    items = _require_nonempty_list(value, path)
+    for index, item in enumerate(items):
+        _require_nonempty_string(item, f"{path}[{index}]")
+
+
+def _validate_canvas(value: Any) -> None:
+    canvas = _require_object(value, "canvas")
+    for field in ("width", "height", "aspect_ratio"):
+        if field not in canvas:
+            raise InvalidSpecError(f"canvas.{field} is required")
+        _require_positive_number(canvas[field], f"canvas.{field}")
+
+
+def _validate_palette(value: Any) -> None:
+    if not isinstance(value, list) or not value:
+        raise InvalidSpecError("palette must be a non-empty array")
+    for index, color in enumerate(value):
+        if not isinstance(color, str) or fullmatch(r"#[0-9A-Fa-f]{6}", color) is None:
+            raise InvalidSpecError(f"palette[{index}] must be a #RRGGBB color")
+
+
+def _validate_typography(value: Any) -> None:
+    typography = _require_object(value, "typography")
+    for field in ("heading_font", "body_font"):
+        if field not in typography:
+            raise InvalidSpecError(f"typography.{field} is required")
+        _require_nonempty_string(typography[field], f"typography.{field}")
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,12 +80,19 @@ class StyleFingerprintV1:
     motif: str
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> StyleFingerprintV1:
+    def from_dict(cls, payload: Any) -> StyleFingerprintV1:
+        payload = _require_object(payload, "top-level value")
         try:
             fingerprint = cls(**payload)
         except TypeError as exc:
             raise InvalidSpecError(str(exc)) from exc
         _require_v1(fingerprint.version)
+        _validate_canvas(fingerprint.canvas)
+        _validate_palette(fingerprint.palette)
+        _validate_typography(fingerprint.typography)
+        _require_object(fingerprint.geometry, "geometry")
+        _require_nonempty_string(fingerprint.density, "density")
+        _require_nonempty_string(fingerprint.motif, "motif")
         return fingerprint
 
     def to_dict(self) -> dict[str, Any]:
@@ -43,26 +106,44 @@ class PresentationSpecV1:
     slides: list[dict[str, Any]]
 
     @classmethod
-    def from_dict(cls, payload: dict[str, Any]) -> PresentationSpecV1:
+    def from_dict(cls, payload: Any) -> PresentationSpecV1:
+        payload = _require_object(payload, "top-level value")
         try:
             spec = cls(**payload)
         except TypeError as exc:
             raise InvalidSpecError(str(exc)) from exc
         _require_v1(spec.version)
-        supported_layouts = {
+        _require_nonempty_string(spec.title, "title")
+        _require_nonempty_list(spec.slides, "slides")
+        required_fields = {
             "title": {"layout", "title"},
             "two_column": {"layout", "title", "left", "right"},
         }
-        for index, slide in enumerate(spec.slides):
+        allowed_fields = {
+            "title": required_fields["title"] | {"subtitle"},
+            "two_column": required_fields["two_column"],
+        }
+        for index, raw_slide in enumerate(spec.slides):
+            slide = _require_object(raw_slide, f"slides[{index}]")
             layout = slide.get("layout")
-            if layout not in supported_layouts:
+            if layout not in required_fields:
                 raise InvalidSpecError(
                     f"slides[{index}].layout has unsupported value: {layout}"
                 )
-            missing = supported_layouts[layout] - slide.keys()
+            missing = required_fields[layout] - slide.keys()
             if missing:
                 fields = ", ".join(sorted(missing))
                 raise InvalidSpecError(f"slides[{index}] missing required fields: {fields}")
+            unknown = slide.keys() - allowed_fields[layout]
+            if unknown:
+                fields = ", ".join(sorted(unknown))
+                raise InvalidSpecError(f"slides[{index}] has unknown fields: {fields}")
+            _require_nonempty_string(slide["title"], f"slides[{index}].title")
+            if "subtitle" in slide:
+                _require_nonempty_string(slide["subtitle"], f"slides[{index}].subtitle")
+            if layout == "two_column":
+                _require_nonempty_string_list(slide["left"], f"slides[{index}].left")
+                _require_nonempty_string_list(slide["right"], f"slides[{index}].right")
         return spec
 
     def to_dict(self) -> dict[str, Any]:

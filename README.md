@@ -166,6 +166,8 @@ Top-level fields:
 | `title` | string | yes | Presentation title stored in the semantic specification |
 | `slides` | array | yes | Ordered slide definitions |
 
+`title` must be a non-empty string, and `slides` must contain at least one slide object. Unknown fields are rejected inside slide objects.
+
 Supported slide layouts:
 
 | Layout | Required fields | Optional fields |
@@ -173,7 +175,7 @@ Supported slide layouts:
 | `title` | `layout`, `title` | `subtitle` |
 | `two_column` | `layout`, `title`, `left`, `right` | none |
 
-`left` and `right` are arrays of strings. Their items are rendered as separate lines in editable text boxes.
+`left` and `right` must be non-empty arrays of non-empty strings. Their items are rendered as separate lines in editable text boxes. Slide titles and optional subtitles must also be non-empty strings.
 
 ### Style fingerprint
 
@@ -188,6 +190,8 @@ Required fields:
 | `geometry` | object | Reference-specific structural evidence |
 | `density` | string | Density label carried by the contract |
 | `motif` | string | Motif label carried by the contract |
+
+`canvas.width`, `canvas.height`, and `canvas.aspect_ratio` must be finite positive numbers. `palette` must contain at least one `#RRGGBB` color. Both typography values, `density`, and `motif` must be non-empty strings, and `geometry` must be an object.
 
 For manually written fingerprints, `canvas.width` and `canvas.height` are PowerPoint dimensions in inches. Image inspection initially reports those values in pixels, so review or replace them before using an image fingerprint to build a presentation.
 

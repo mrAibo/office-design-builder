@@ -80,3 +80,12 @@
 - Tests run: 21-test suite; offline sdist/wheel build; clean-environment install from the downloaded release wheel; checksum verification; deterministic test presentation build; structural and visual verification; README command and link checks.
 - Open issues: PyPI publication, Windows CI, stable handling of corrupt inspection inputs, deeper schema type validation, additional layouts, and visual verification automation remain future work.
 - Next action: prioritize post-v0.1.0 work from user feedback and the remaining issue list.
+
+## 2026-09-20 — Task 1 strict version 1 schema validation
+
+- Task: Enforce field types, required values, allowed slide fields, and renderer-safe constraints at the version 1 contract boundary.
+- Decisions: keep validation dependency-free in `models.py`; report field paths through `InvalidSpecError`; reject empty presentations, invalid slide containers, unknown slide fields, malformed colors, non-finite dimensions, and empty text slots.
+- Files changed: schema models, model and CLI tests, README contract documentation, and this project log.
+- Tests run: focused RED→GREEN tests for each new rule; full pytest suite; offline package build; CLI help; example validate/build/verify; `git diff --check`.
+- Open issues: reference-file decoding and output-write failures are handled in Task 2.
+- Next action: implement Task 2 stable reference-inspection failures.

@@ -108,6 +108,48 @@ def test_build_creates_editable_pptx(tmp_path: Path) -> None:
     }
 
 
+def test_build_reports_stable_error_for_invalid_fingerprint(tmp_path: Path) -> None:
+    spec_path = tmp_path / "spec.json"
+    fingerprint_path = tmp_path / "fingerprint.json"
+    output_path = tmp_path / "output.pptx"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "version": "1",
+                "title": "Built",
+                "slides": [{"layout": "title", "title": "Built"}],
+            }
+        )
+    )
+    fingerprint_path.write_text(
+        json.dumps(
+            {
+                "version": "1",
+                "canvas": {"width": 10.0, "height": 5.0, "aspect_ratio": 2.0},
+                "palette": [],
+                "typography": {"heading_font": "Aptos", "body_font": "Aptos"},
+                "geometry": {},
+                "density": "balanced",
+                "motif": "none",
+            }
+        )
+    )
+
+    result = run_cli(
+        "build",
+        str(spec_path),
+        "--fingerprint",
+        str(fingerprint_path),
+        "--output",
+        str(output_path),
+    )
+
+    assert result.returncode == 2
+    assert result.stderr.startswith("INVALID_SPEC:")
+    assert "palette" in result.stderr
+    assert not output_path.exists()
+
+
 def test_verify_reports_stable_error_for_invalid_package(tmp_path: Path) -> None:
     artifact = tmp_path / "broken.pptx"
     artifact.write_text("not a package")
