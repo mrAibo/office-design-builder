@@ -20,7 +20,7 @@ def verify_pptx(path: Path) -> dict[str, int]:
         1
         for slide in presentation.slides
         for shape in slide.shapes
-        if shape.has_text_frame
+        if shape.has_text_frame and getattr(shape, "text", "").strip()
     )
     if not presentation.slides:
         raise VerifyError(f"{path}: presentation contains no slides")

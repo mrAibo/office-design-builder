@@ -62,3 +62,12 @@
 - Tests run: example validate/build/verify; python-pptx structural read-back; LibreOffice PDF export; two-slide PNG render with visual review; full pytest/build/help/diff gates.
 - Open issues: the minimal layouts are technically clean but visually sparse, with substantial unused whitespace; composition refinement remains future work.
 - Next action: review MVP acceptance gates and decide whether to tag a first release candidate.
+
+## 2026-09-20 — Release-candidate visual refinement
+
+- Task: Resolve the visual acceptance failures from the first MVP render and prepare a local RC candidate.
+- Decisions: preserve the existing schema; use native editable accent shapes, compact responsive cards, and an offset-block title motif; do not publish or create a release tag without explicit confirmation.
+- Files changed: PPTX renderer, structural verifier, renderer regression tests, and this project log.
+- Tests run: focused RED→GREEN geometry and title-motif tests; full test/build/help/diff gates; example build/verify; LibreOffice rendering; visual review of both final slide PNGs.
+- Open issues: richer content-density strategies and additional layouts remain post-MVP work.
+- Next action: await explicit approval before creating or publishing a release tag.

@@ -9,6 +9,7 @@ from zipfile import ZipFile, ZipInfo
 
 from pptx import Presentation
 from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE
 from pptx.util import Inches, Pt
 
 from office_design_builder.models import PresentationSpecV1, StyleFingerprintV1
@@ -33,6 +34,35 @@ def _canonicalize_package(path: Path) -> None:
     temporary.replace(path)
 
 
+def _tint(color: RGBColor, ratio: float = 0.25) -> RGBColor:
+    return RGBColor(
+        *(round(255 + (channel - 255) * ratio) for channel in color)
+    )
+
+
+def _add_panel(
+    slide: Any,
+    name: str,
+    *,
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    color: RGBColor,
+) -> None:
+    shape = slide.shapes.add_shape(
+        MSO_SHAPE.ROUNDED_RECTANGLE,
+        Inches(left),
+        Inches(top),
+        Inches(width),
+        Inches(height),
+    )
+    shape.name = name
+    shape.fill.solid()
+    shape.fill.fore_color.rgb = color
+    shape.line.fill.background()
+
+
 def _add_text(
     slide: Any,
     text: str,
@@ -44,15 +74,21 @@ def _add_text(
     font_name: str,
     font_size: int,
     color: RGBColor,
+    bold: bool = False,
 ) -> None:
     shape = slide.shapes.add_textbox(
         Inches(left), Inches(top), Inches(width), Inches(height)
     )
+    shape.text_frame.margin_left = 0
+    shape.text_frame.margin_right = 0
+    shape.text_frame.margin_top = 0
+    shape.text_frame.margin_bottom = 0
     paragraph = shape.text_frame.paragraphs[0]
     run = paragraph.add_run()
     run.text = text
     run.font.name = font_name
     run.font.size = Pt(font_size)
+    run.font.bold = bold
     run.font.color.rgb = color
 
 
@@ -69,69 +105,139 @@ def build_presentation(
     presentation.slide_width = Inches(fingerprint.canvas["width"])
     presentation.slide_height = Inches(fingerprint.canvas["height"])
     blank_layout = presentation.slide_layouts[6]
-    color = RGBColor.from_string(fingerprint.palette[0].removeprefix("#"))
+    primary = RGBColor.from_string(fingerprint.palette[0].removeprefix("#"))
+    secondary_source = fingerprint.palette[1] if len(fingerprint.palette) > 1 else fingerprint.palette[0]
+    secondary = RGBColor.from_string(secondary_source.removeprefix("#"))
+    panel_color = _tint(secondary)
     heading_font = fingerprint.typography["heading_font"]
     body_font = fingerprint.typography["body_font"]
+    canvas_width = fingerprint.canvas["width"]
+    canvas_height = fingerprint.canvas["height"]
+    margin = canvas_width * 0.06
+    heading_size = 36 if canvas_width >= 12 else 30
+    body_size = 18 if canvas_width >= 12 else 16
 
     for slide_spec in spec.slides:
         slide = presentation.slides.add_slide(blank_layout)
         if slide_spec["layout"] == "title":
+            _add_panel(
+                slide,
+                "Title accent",
+                left=margin,
+                top=canvas_height * 0.23,
+                width=0.12,
+                height=canvas_height * 0.32,
+                color=primary,
+            )
+            _add_panel(
+                slide,
+                "Motif back",
+                left=canvas_width * 0.82,
+                top=canvas_height * 0.34,
+                width=canvas_width * 0.09,
+                height=canvas_height * 0.18,
+                color=panel_color,
+            )
+            _add_panel(
+                slide,
+                "Motif front",
+                left=canvas_width * 0.85,
+                top=canvas_height * 0.41,
+                width=canvas_width * 0.09,
+                height=canvas_height * 0.18,
+                color=primary,
+            )
             _add_text(
                 slide,
                 slide_spec["title"],
-                left=0.8,
-                top=1.3,
-                width=8.4,
-                height=0.8,
+                left=margin + 0.32,
+                top=canvas_height * 0.29,
+                width=canvas_width * 0.62,
+                height=canvas_height * 0.14,
                 font_name=heading_font,
-                font_size=30,
-                color=color,
+                font_size=heading_size,
+                color=primary,
+                bold=True,
             )
             _add_text(
                 slide,
                 slide_spec.get("subtitle", ""),
-                left=0.8,
-                top=2.3,
-                width=8.4,
-                height=0.5,
+                left=margin + 0.32,
+                top=canvas_height * 0.48,
+                width=canvas_width * 0.62,
+                height=canvas_height * 0.1,
                 font_name=body_font,
-                font_size=18,
-                color=color,
+                font_size=body_size,
+                color=primary,
             )
             continue
 
+        gap = canvas_width * 0.035
+        item_count = max(len(slide_spec["left"]), len(slide_spec["right"]))
+        panel_height = min(canvas_height * 0.42, 0.7 + 0.5 * item_count)
+        panel_top = min(canvas_height * 0.32, canvas_height - panel_height - 0.55)
+        panel_width = (canvas_width - 2 * margin - gap) / 2
+        right_left = margin + panel_width + gap
+        _add_panel(
+            slide,
+            "Title accent",
+            left=margin,
+            top=canvas_height * 0.085,
+            width=0.12,
+            height=canvas_height * 0.095,
+            color=primary,
+        )
+        _add_panel(
+            slide,
+            "Left panel",
+            left=margin,
+            top=panel_top,
+            width=panel_width,
+            height=panel_height,
+            color=panel_color,
+        )
+        _add_panel(
+            slide,
+            "Right panel",
+            left=right_left,
+            top=panel_top,
+            width=panel_width,
+            height=panel_height,
+            color=panel_color,
+        )
         _add_text(
             slide,
             slide_spec["title"],
-            left=0.6,
-            top=0.4,
-            width=8.8,
-            height=0.6,
+            left=margin + 0.32,
+            top=canvas_height * 0.08,
+            width=canvas_width - 2 * margin - 0.32,
+            height=canvas_height * 0.12,
             font_name=heading_font,
-            font_size=24,
-            color=color,
+            font_size=heading_size - 6,
+            color=primary,
+            bold=True,
         )
         _add_text(
             slide,
             "\n".join(slide_spec["left"]),
-            left=0.6,
-            top=1.3,
-            width=4.1,
-            height=3.0,
+            left=margin + 0.32,
+            top=panel_top + 0.35,
+            width=panel_width - 0.64,
+            height=panel_height - 0.7,
             font_name=body_font,
-            font_size=16,
-            color=color,
+            font_size=body_size,
+            color=primary,
         )
         _add_text(
             slide,
             "\n".join(slide_spec["right"]),
-            left=5.2,
-            top=1.3,
-            width=4.1,
-            height=3.0,
+            left=right_left + 0.32,
+            top=panel_top + 0.35,
+            width=panel_width - 0.64,
+            height=panel_height - 0.7,
             font_name=body_font,
-            font_size=16,
-            color=color,
+            font_size=body_size,
+            color=primary,
         )
 
     presentation.save(str(output_path))
