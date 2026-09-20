@@ -35,3 +35,12 @@
 - Tests run: focused generated-PPTX test plus the full suite; offline package build; `git diff --check`.
 - Open issues: inherited theme colors/fonts are not yet resolved beyond directly materialized run evidence.
 - Next action: implement Task 4 editable PPTX rendering using strict TDD.
+
+## 2026-09-20 — Task 4 editable deterministic PPTX rendering
+
+- Task: Render editable `title` and `two_column` slides from semantic contracts and style fingerprints.
+- Decisions: native text boxes only; renderer-owned layout geometry; explicit font/color styling; canonical core metadata and ZIP timestamps for byte-identical output.
+- Files changed: PPTX renderer package and structural/determinism integration tests.
+- Tests run: focused structural renderer test; RED→GREEN byte-determinism regression; full suite; offline package build; `git diff --check`.
+- Open issues: layout geometry is intentionally minimal and will need visual acceptance tuning with real fixtures.
+- Next action: implement Task 5 CLI and structural verification using strict TDD.
