@@ -1,0 +1,23 @@
+{
+  "version": "1",
+  "title": "Office Design Builder",
+  "slides": [
+    {
+      "layout": "title",
+      "title": "Office Design Builder",
+      "subtitle": "Editable, deterministic Office artifacts"
+    },
+    {
+      "layout": "two_column",
+      "title": "MVP workflow",
+      "left": [
+        "Inspect a visual reference",
+        "Validate semantic JSON"
+      ],
+      "right": [
+        "Render native PowerPoint shapes",
+        "Verify the generated package"
+      ]
+    }
+  ]
+}

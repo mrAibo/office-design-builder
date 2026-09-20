@@ -1,0 +1,19 @@
+{
+  "version": "1",
+  "canvas": {
+    "width": 13.333,
+    "height": 7.5,
+    "aspect_ratio": 1.7777333333
+  },
+  "palette": [
+    "#17324D",
+    "#E7EEF5"
+  ],
+  "typography": {
+    "heading_font": "Aptos Display",
+    "body_font": "Aptos"
+  },
+  "geometry": {},
+  "density": "balanced",
+  "motif": "offset_blocks"
+}

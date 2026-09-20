@@ -53,3 +53,12 @@
 - Tests run: focused RED→GREEN subprocess tests plus the full suite; offline package build; module and installed-script help; `git diff --check`.
 - Open issues: visual rendering verification remains optional until the real acceptance fixture in Task 6.
 - Next action: complete Task 6 documentation and end-to-end acceptance fixture.
+
+## 2026-09-20 — Task 6 documentation and acceptance fixture
+
+- Task: Document the MVP workflow and prove a real local build from versioned examples.
+- Decisions: keep generated PPTX/PDF/PNG artifacts outside the repository; document offline gates and explicit MVP boundaries.
+- Files changed: `README.md`, example fingerprint/spec JSON, and this project log.
+- Tests run: example validate/build/verify; python-pptx structural read-back; LibreOffice PDF export; two-slide PNG render with visual review; full pytest/build/help/diff gates.
+- Open issues: the minimal layouts are technically clean but visually sparse, with substantial unused whitespace; composition refinement remains future work.
+- Next action: review MVP acceptance gates and decide whether to tag a first release candidate.
