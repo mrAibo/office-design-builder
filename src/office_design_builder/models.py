@@ -33,6 +33,12 @@ def _require_nonempty_string(value: Any, path: str) -> None:
         raise InvalidSpecError(f"{path} must be a non-empty string")
 
 
+def _require_bounded_string(value: Any, path: str, maximum: int) -> None:
+    _require_nonempty_string(value, path)
+    if len(value) > maximum:
+        raise InvalidSpecError(f"{path} must contain at most {maximum} characters")
+
+
 def _require_nonempty_list(value: Any, path: str) -> list[Any]:
     if not isinstance(value, list) or not value:
         raise InvalidSpecError(f"{path} must be a non-empty array")
@@ -118,10 +124,12 @@ class PresentationSpecV1:
         required_fields = {
             "title": {"layout", "title"},
             "two_column": {"layout", "title", "left", "right"},
+            "section": {"layout", "title"},
         }
         allowed_fields = {
             "title": required_fields["title"] | {"subtitle"},
             "two_column": required_fields["two_column"],
+            "section": required_fields["section"] | {"subtitle"},
         }
         for index, raw_slide in enumerate(spec.slides):
             slide = _require_object(raw_slide, f"slides[{index}]")
@@ -138,9 +146,14 @@ class PresentationSpecV1:
             if unknown:
                 fields = ", ".join(sorted(unknown))
                 raise InvalidSpecError(f"slides[{index}] has unknown fields: {fields}")
-            _require_nonempty_string(slide["title"], f"slides[{index}].title")
+            title_limit = 80 if layout == "section" else 100
+            _require_bounded_string(
+                slide["title"], f"slides[{index}].title", title_limit
+            )
             if "subtitle" in slide:
-                _require_nonempty_string(slide["subtitle"], f"slides[{index}].subtitle")
+                _require_bounded_string(
+                    slide["subtitle"], f"slides[{index}].subtitle", 160
+                )
             if layout == "two_column":
                 _require_nonempty_string_list(slide["left"], f"slides[{index}].left")
                 _require_nonempty_string_list(slide["right"], f"slides[{index}].right")

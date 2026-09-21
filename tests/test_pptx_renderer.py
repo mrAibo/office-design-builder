@@ -161,12 +161,69 @@ def test_title_slide_uses_compact_decorative_motif(tmp_path: Path) -> None:
     assert shapes["Motif front"].height < slide_height * 0.22
 
 
+def test_build_presentation_renders_editable_section_slide(tmp_path: Path) -> None:
+    spec = PresentationSpecV1.from_dict(
+        {
+            "version": "1",
+            "title": "Architecture",
+            "slides": [
+                {
+                    "layout": "section",
+                    "title": "Architecture",
+                    "subtitle": "How the pieces fit together",
+                }
+            ],
+        }
+    )
+    fingerprint = StyleFingerprintV1.from_dict(
+        {
+            "version": "1",
+            "canvas": {"width": 13.333, "height": 7.5, "aspect_ratio": 1.7777},
+            "palette": ["#17324D", "#E7EEF5"],
+            "typography": {"heading_font": "Aptos", "body_font": "Aptos"},
+            "geometry": {},
+            "density": "balanced",
+            "motif": "offset_blocks",
+        }
+    )
+    output = tmp_path / "section.pptx"
+
+    build_presentation(spec, fingerprint, output)
+
+    result = Presentation(str(output))
+    slide = result.slides[0]
+    section_shapes = [cast(Any, shape) for shape in slide.shapes]
+    shapes: dict[str, Any] = {shape.name: shape for shape in section_shapes}
+    texts = [shape.text for shape in section_shapes if shape.has_text_frame and shape.text]
+    slide_width = result.slide_width
+    slide_height = result.slide_height
+    assert slide_width is not None
+    assert slide_height is not None
+    assert texts == ["Architecture", "How the pieces fit together"]
+    assert {"Section field", "Section accent"} <= shapes.keys()
+    assert all(shape.shape_type != MSO_SHAPE_TYPE.PICTURE for shape in section_shapes)
+    assert all(
+        shape.left >= 0
+        and shape.top >= 0
+        and shape.left + shape.width <= slide_width
+        and shape.top + shape.height <= slide_height
+        for shape in section_shapes
+    )
+
+
 def test_build_presentation_is_byte_deterministic(tmp_path: Path) -> None:
     spec = PresentationSpecV1.from_dict(
         {
             "version": "1",
             "title": "Determinism",
-            "slides": [{"layout": "title", "title": "Same", "subtitle": "Input"}],
+            "slides": [
+                {"layout": "title", "title": "Same", "subtitle": "Input"},
+                {
+                    "layout": "section",
+                    "title": "Architecture",
+                    "subtitle": "Deterministic section",
+                },
+            ],
         }
     )
     fingerprint = StyleFingerprintV1.from_dict(

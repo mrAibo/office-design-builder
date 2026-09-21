@@ -172,6 +172,55 @@ def build_presentation(
             )
             continue
 
+        if slide_spec["layout"] == "section":
+            field_left = margin
+            field_top = canvas_height * 0.18
+            field_width = canvas_width - 2 * margin
+            field_height = canvas_height * 0.64
+            _add_panel(
+                slide,
+                "Section field",
+                left=field_left,
+                top=field_top,
+                width=field_width,
+                height=field_height,
+                color=panel_color,
+            )
+            _add_panel(
+                slide,
+                "Section accent",
+                left=field_left,
+                top=field_top,
+                width=0.16,
+                height=field_height,
+                color=primary,
+            )
+            _add_text(
+                slide,
+                slide_spec["title"],
+                left=field_left + 0.55,
+                top=canvas_height * 0.36,
+                width=field_width * 0.72,
+                height=canvas_height * 0.16,
+                font_name=heading_font,
+                font_size=heading_size + 4,
+                color=primary,
+                bold=True,
+            )
+            if "subtitle" in slide_spec:
+                _add_text(
+                    slide,
+                    slide_spec["subtitle"],
+                    left=field_left + 0.55,
+                    top=canvas_height * 0.56,
+                    width=field_width * 0.72,
+                    height=canvas_height * 0.1,
+                    font_name=body_font,
+                    font_size=body_size,
+                    color=primary,
+                )
+            continue
+
         gap = canvas_width * 0.035
         item_count = max(len(slide_spec["left"]), len(slide_spec["right"]))
         panel_height = min(canvas_height * 0.42, 0.7 + 0.5 * item_count)

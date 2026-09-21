@@ -207,6 +207,37 @@ def test_presentation_spec_rejects_unknown_slide_fields() -> None:
         PresentationSpecV1.from_dict(payload)
 
 
+def test_presentation_spec_accepts_section_layout() -> None:
+    payload = {
+        "version": "1",
+        "title": "Review",
+        "slides": [
+            {
+                "layout": "section",
+                "title": "Architecture",
+                "subtitle": "How the pieces fit together",
+            }
+        ],
+    }
+
+    assert PresentationSpecV1.from_dict(payload).to_dict() == payload
+
+
+@pytest.mark.parametrize(
+    ("slide", "field"),
+    [
+        ({"layout": "section", "title": "x" * 81}, "title"),
+        ({"layout": "section", "title": "Architecture", "subtitle": "x" * 161}, "subtitle"),
+        ({"layout": "section", "title": "Architecture", "extra": "no"}, "extra"),
+    ],
+)
+def test_presentation_spec_rejects_invalid_section_fields(slide, field) -> None:
+    payload = {"version": "1", "title": "Review", "slides": [slide]}
+
+    with pytest.raises(InvalidSpecError, match=rf"slides\[0\].*{field}"):
+        PresentationSpecV1.from_dict(payload)
+
+
 def test_presentation_spec_round_trips_supported_layouts() -> None:
     payload = {
         "version": "1",
