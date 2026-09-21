@@ -161,6 +161,7 @@ class PresentationSpecV1:
             },
             "timeline": {"layout", "title", "events"},
             "table": {"layout", "title", "columns", "rows"},
+            "chart": {"layout", "title", "chart_type", "categories", "series"},
         }
         allowed_fields = {
             "title": required_fields["title"] | {"subtitle"},
@@ -171,6 +172,7 @@ class PresentationSpecV1:
             "comparison": required_fields["comparison"],
             "timeline": required_fields["timeline"],
             "table": required_fields["table"],
+            "chart": required_fields["chart"],
         }
         for index, raw_slide in enumerate(spec.slides):
             slide = _require_object(raw_slide, f"slides[{index}]")
@@ -277,6 +279,51 @@ class PresentationSpecV1:
                         )
                     for cell_index, cell in enumerate(raw_row):
                         _require_bounded_string(cell, f"{path}[{cell_index}]", 80)
+            if layout == "chart":
+                if slide["chart_type"] not in {"column", "line"}:
+                    raise InvalidSpecError(
+                        f"slides[{index}].chart_type must be column or line"
+                    )
+                categories = slide["categories"]
+                _require_bounded_string_list(
+                    categories,
+                    f"slides[{index}].categories",
+                    maximum_items=8,
+                    maximum_length=30,
+                )
+                if len(categories) < 2:
+                    raise InvalidSpecError(
+                        f"slides[{index}].categories must contain between 2 and 8 items"
+                    )
+                series_items = _require_nonempty_list(
+                    slide["series"], f"slides[{index}].series"
+                )
+                if len(series_items) > 4:
+                    raise InvalidSpecError(
+                        f"slides[{index}].series must contain at most 4 items"
+                    )
+                for series_index, raw_series in enumerate(series_items):
+                    path = f"slides[{index}].series[{series_index}]"
+                    series = _require_object(raw_series, path)
+                    if series.keys() != {"name", "values"}:
+                        raise InvalidSpecError(
+                            f"{path} must contain exactly name and values"
+                        )
+                    _require_bounded_string(series["name"], f"{path}.name", 40)
+                    values = _require_nonempty_list(series["values"], f"{path}.values")
+                    if len(values) != len(categories):
+                        raise InvalidSpecError(
+                            f"{path}.values must match slides[{index}].categories length"
+                        )
+                    for value_index, value in enumerate(values):
+                        if (
+                            isinstance(value, bool)
+                            or not isinstance(value, (int, float))
+                            or not isfinite(value)
+                        ):
+                            raise InvalidSpecError(
+                                f"{path}.values[{value_index}] must be a finite number"
+                            )
         return spec
 
     def to_dict(self) -> dict[str, Any]:

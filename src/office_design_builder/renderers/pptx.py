@@ -9,7 +9,9 @@ from zipfile import ZipFile, ZipInfo
 
 from PIL import Image
 from pptx import Presentation
+from pptx.chart.data import ChartData
 from pptx.dml.color import RGBColor
+from pptx.enum.chart import XL_CHART_TYPE, XL_MARKER_STYLE
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.enum.text import PP_ALIGN
 from pptx.oxml.xmlchemy import OxmlElement
@@ -584,6 +586,68 @@ def build_presentation(
                     run.font.size = Pt(body_size - 1)
                     run.font.bold = row_index == 0
                     run.font.color.rgb = RGBColor(255, 255, 255) if row_index == 0 else primary
+            continue
+
+        if slide_spec["layout"] == "chart":
+            _add_panel(
+                slide,
+                "Title accent",
+                left=margin,
+                top=canvas_height * 0.085,
+                width=0.12,
+                height=canvas_height * 0.095,
+                color=primary,
+            )
+            _add_text(
+                slide,
+                slide_spec["title"],
+                left=margin + 0.32,
+                top=canvas_height * 0.08,
+                width=canvas_width - 2 * margin - 0.32,
+                height=canvas_height * 0.12,
+                font_name=heading_font,
+                font_size=heading_size - 6,
+                color=primary,
+                bold=True,
+            )
+            chart_data = ChartData()
+            chart_data.categories = slide_spec["categories"]
+            for series_spec in slide_spec["series"]:
+                chart_data.add_series(series_spec["name"], series_spec["values"])
+            chart_kind = (
+                XL_CHART_TYPE.COLUMN_CLUSTERED
+                if slide_spec["chart_type"] == "column"
+                else XL_CHART_TYPE.LINE_MARKERS
+            )
+            chart_shape = slide.shapes.add_chart(
+                chart_kind,
+                Inches(margin),
+                Inches(canvas_height * 0.24),
+                Inches(canvas_width - 2 * margin),
+                Inches(canvas_height * 0.65),
+                chart_data,
+            )
+            chart_shape.name = f"{slide_spec['chart_type'].title()} chart"
+            chart = chart_shape.chart
+            chart.has_title = False
+            chart.has_legend = len(slide_spec["series"]) > 1
+            chart.legend.include_in_layout = False
+            chart.chart_style = 10
+            palette = [primary, _tint(primary, 0.55), secondary, _tint(primary, 0.75)]
+            for series_index, series in enumerate(chart.series):
+                color = palette[series_index]
+                if slide_spec["chart_type"] == "column":
+                    series.format.fill.solid()
+                    series.format.fill.fore_color.rgb = color
+                    series.format.line.fill.background()
+                else:
+                    series.format.line.color.rgb = color
+                    series.format.line.width = Pt(2.25)
+                    series.marker.style = XL_MARKER_STYLE.CIRCLE
+                    series.marker.size = 7
+                    series.marker.format.fill.solid()
+                    series.marker.format.fill.fore_color.rgb = color
+                    series.marker.format.line.color.rgb = color
             continue
 
         gap = canvas_width * 0.035

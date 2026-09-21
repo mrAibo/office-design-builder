@@ -447,6 +447,60 @@ def test_presentation_spec_rejects_invalid_table_data(columns, rows) -> None:
         PresentationSpecV1.from_dict(payload)
 
 
+def test_presentation_spec_accepts_chart_layouts() -> None:
+    for chart_type in ("column", "line"):
+        payload = {
+            "version": "1",
+            "title": "Revenue",
+            "slides": [
+                {
+                    "layout": "chart",
+                    "title": "Revenue",
+                    "chart_type": chart_type,
+                    "categories": ["Q1", "Q2", "Q3"],
+                    "series": [
+                        {"name": "Actual", "values": [10, 12.5, 15]},
+                        {"name": "Target", "values": [9, 13, 16]},
+                    ],
+                }
+            ],
+        }
+
+        assert PresentationSpecV1.from_dict(payload).to_dict() == payload
+
+
+@pytest.mark.parametrize(
+    ("chart_type", "categories", "series"),
+    [
+        ("pie", ["Q1", "Q2"], [{"name": "Actual", "values": [1, 2]}]),
+        ("column", ["Q1"], [{"name": "Actual", "values": [1]}]),
+        ("column", [f"Q{i}" for i in range(9)], [{"name": "Actual", "values": list(range(9))}]),
+        ("line", ["Q1", "Q2"], []),
+        ("line", ["Q1", "Q2"], [{"name": "Actual", "values": [1]}]),
+        ("line", ["Q1", "Q2"], [{"name": "Actual", "values": [True, 2]}]),
+        ("line", ["Q1", "Q2"], [{"name": "Actual", "values": [float("inf"), 2]}]),
+        ("line", ["Q1", "Q2"], [{"name": "Actual", "values": [1, 2], "color": "red"}]),
+    ],
+)
+def test_presentation_spec_rejects_invalid_chart_data(chart_type, categories, series) -> None:
+    payload = {
+        "version": "1",
+        "title": "Chart",
+        "slides": [
+            {
+                "layout": "chart",
+                "title": "Chart",
+                "chart_type": chart_type,
+                "categories": categories,
+                "series": series,
+            }
+        ],
+    }
+
+    with pytest.raises(InvalidSpecError, match=r"slides\[0\]\.(chart_type|categories|series)"):
+        PresentationSpecV1.from_dict(payload)
+
+
 def test_presentation_spec_round_trips_supported_layouts() -> None:
     payload = {
         "version": "1",

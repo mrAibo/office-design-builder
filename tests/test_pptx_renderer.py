@@ -474,6 +474,49 @@ def test_build_presentation_renders_native_editable_table(tmp_path: Path) -> Non
     assert all(table.columns[0].width == column.width for column in table.columns)
 
 
+@pytest.mark.parametrize("chart_type", ["column", "line"])
+def test_build_presentation_renders_native_editable_chart(tmp_path: Path, chart_type: str) -> None:
+    spec = PresentationSpecV1.from_dict(
+        {
+            "version": "1",
+            "title": "Revenue",
+            "slides": [
+                {
+                    "layout": "chart",
+                    "title": "Revenue",
+                    "chart_type": chart_type,
+                    "categories": ["Q1", "Q2", "Q3"],
+                    "series": [
+                        {"name": "Actual", "values": [10, 12, 15]},
+                        {"name": "Target", "values": [9, 13, 16]},
+                    ],
+                }
+            ],
+        }
+    )
+    fingerprint = StyleFingerprintV1.from_dict(
+        {
+            "version": "1",
+            "canvas": {"width": 13.333, "height": 7.5, "aspect_ratio": 1.7777},
+            "palette": ["#17324D", "#E7EEF5"],
+            "typography": {"heading_font": "Aptos", "body_font": "Aptos"},
+            "geometry": {},
+            "density": "balanced",
+            "motif": "none",
+        }
+    )
+    output_path = tmp_path / f"{chart_type}.pptx"
+
+    build_presentation(spec, fingerprint, output_path)
+
+    result = Presentation(str(output_path))
+    charts = [cast(Any, shape).chart for shape in result.slides[0].shapes if shape.has_chart]
+    assert len(charts) == 1
+    chart = charts[0]
+    assert [series.name for series in chart.series] == ["Actual", "Target"]
+    assert list(chart.series[0].values) == [10, 12, 15]
+
+
 def test_build_presentation_is_byte_deterministic(tmp_path: Path) -> None:
     spec = PresentationSpecV1.from_dict(
         {
