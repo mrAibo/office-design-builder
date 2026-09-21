@@ -168,8 +168,25 @@ Supported slide layouts:
 | --- | --- | --- |
 | `title` | `layout`, `title` | `subtitle` |
 | `two_column` | `layout`, `title`, `left`, `right` | none |
+| `section` | `layout`, `title` | `subtitle` |
+| `title_bullets` | `layout`, `title`, `bullets` | none |
+| `image_text` | `layout`, `title`, `image`, `image_alt`, `body` | `image_position` |
+| `comparison` | `layout`, `title`, `left_title`, `left`, `right_title`, `right` | none |
+| `timeline` | `layout`, `title`, `events` | none |
+| `table` | `layout`, `title`, `columns`, `rows` | none |
+| `chart` | `layout`, `title`, `chart_type`, `categories`, `series` | none |
 
-`left` and `right` must be non-empty arrays of non-empty strings. Their items are rendered as separate lines in editable text boxes. Slide titles and optional subtitles must also be non-empty strings.
+All layouts are fail-closed: oversized collections, overlong text, malformed rows/events/series, and unknown fields are rejected with `INVALID_SPEC` rather than truncated or silently resized. Tables and column/line charts are native editable PowerPoint objects.
+
+`image_text` accepts only local PNG/JPEG paths relative to the presentation specification. URL, absolute, drive-qualified, and parent-traversal paths are rejected. Images are embedded in the PPTX; `image_position` is `left` by default and may be `right`.
+
+The versioned [`examples/presentation.json`](examples/presentation.json) exercises all nine layouts. Build it from the repository root so its image path resolves correctly:
+
+```bash
+odb build examples/presentation.json \
+  --fingerprint examples/style-fingerprint.json \
+  --output presentation.pptx
+```
 
 ### Style fingerprint
 
@@ -285,11 +302,12 @@ odb --help
 ## Current limitations
 
 - Output is PPTX only. DOCX generation is not implemented.
-- Only `title` and `two_column` layouts are supported.
 - The renderer does not reproduce a reference pixel for pixel.
 - PPTX theme inheritance is only partially inspected.
 - Raster references do not reveal font identity or semantic layout.
-- OCR, charts, tables, images, animations, speaker notes, and template-preserving cloning are not implemented.
+- OCR, animations, speaker notes, and template-preserving cloning are not implemented.
+- Charts support clustered columns and lines with markers only; advanced axes, stacking, formulas, and per-point formatting are not supported.
+- Tables use equal-width columns and do not support merged cells or per-cell input styling.
 - `verify` performs structural checks, not visual checks.
 - PyPI releases use tag-gated Trusted Publishing; see [the publishing guide](docs/publishing.md).
 

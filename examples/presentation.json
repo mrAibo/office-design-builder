@@ -10,13 +10,63 @@
     {
       "layout": "two_column",
       "title": "MVP workflow",
-      "left": [
-        "Inspect a visual reference",
-        "Validate semantic JSON"
-      ],
-      "right": [
-        "Render native PowerPoint shapes",
-        "Verify the generated package"
+      "left": ["Inspect a visual reference", "Validate semantic JSON"],
+      "right": ["Render native PowerPoint shapes", "Verify the generated package"]
+    },
+    {
+      "layout": "section",
+      "title": "Native layouts",
+      "subtitle": "Every element remains editable"
+    },
+    {
+      "layout": "title_bullets",
+      "title": "Design priorities",
+      "bullets": ["Local-first operation", "Strict versioned contracts", "Byte-identical output"]
+    },
+    {
+      "layout": "image_text",
+      "title": "Visual evidence",
+      "image": "assets/dashboard.png",
+      "image_alt": "Example analytics dashboard",
+      "body": ["PNG and JPEG assets are embedded", "Text remains editable", "Paths resolve relative to the spec"]
+    },
+    {
+      "layout": "comparison",
+      "title": "Generated output",
+      "left_title": "Native",
+      "left": ["Editable text", "PowerPoint tables", "PowerPoint charts"],
+      "right_title": "Deterministic",
+      "right": ["Stable metadata", "Canonical package timestamps", "Offline-safe builds"]
+    },
+    {
+      "layout": "timeline",
+      "title": "Delivery workflow",
+      "events": [
+        {"label": "Inspect", "description": "Extract style evidence"},
+        {"label": "Specify", "description": "Write semantic JSON"},
+        {"label": "Build", "description": "Render native objects"},
+        {"label": "Verify", "description": "Check structure and visuals"}
+      ]
+    },
+    {
+      "layout": "table",
+      "title": "Layout capabilities",
+      "columns": ["Capability", "Editable", "Deterministic"],
+      "rows": [
+        ["Text", "Yes", "Yes"],
+        ["Pictures", "Embedded", "Yes"],
+        ["Tables", "Native", "Yes"],
+        ["Charts", "Native", "Yes"]
+      ]
+    },
+    {
+      "layout": "chart",
+      "title": "Artifact coverage",
+      "chart_type": "column",
+      "categories": ["Text", "Images", "Tables", "Charts"],
+      "series": [
+        {"name": "Editable objects", "values": [12, 1, 1, 1]},
+        {"name": "Rasterized objects", "values": [0, 0, 0, 0]}
       ]
     }
   ]

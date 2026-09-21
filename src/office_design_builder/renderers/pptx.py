@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
+import re
 from typing import Any
 from zipfile import ZipFile, ZipInfo
 
@@ -24,19 +26,32 @@ _FIXED_TIMESTAMP = datetime(2000, 1, 1)
 _FIXED_ZIP_DATE = (1980, 1, 1, 0, 0, 0)
 
 
-def _canonicalize_package(path: Path) -> None:
-    with ZipFile(path, "r") as package:
-        entries = [(info, package.read(info.filename)) for info in package.infolist()]
-
-    temporary = path.with_suffix(".tmp")
-    with ZipFile(temporary, "w") as package:
-        for original, data in entries:
+def _canonicalize_zip_bytes(source: bytes) -> bytes:
+    output = BytesIO()
+    with ZipFile(BytesIO(source), "r") as package, ZipFile(output, "w") as canonical_package:
+        for original in package.infolist():
+            data = package.read(original.filename)
+            if original.filename.endswith(".xlsx"):
+                data = _canonicalize_zip_bytes(data)
+            if original.filename == "docProps/core.xml":
+                data = re.sub(
+                    rb"(<dcterms:(?:created|modified)[^>]*>).*?(</dcterms:(?:created|modified)>)",
+                    rb"\g<1>2000-01-01T00:00:00Z\g<2>",
+                    data,
+                )
             canonical = ZipInfo(original.filename, date_time=_FIXED_ZIP_DATE)
             canonical.compress_type = original.compress_type
             canonical.external_attr = original.external_attr
             canonical.internal_attr = original.internal_attr
             canonical.create_system = original.create_system
-            package.writestr(canonical, data)
+            canonical_package.writestr(canonical, data)
+    return output.getvalue()
+
+
+def _canonicalize_package(path: Path) -> None:
+    canonical = _canonicalize_zip_bytes(path.read_bytes())
+    temporary = path.with_suffix(".tmp")
+    temporary.write_bytes(canonical)
     temporary.replace(path)
 
 
@@ -206,19 +221,19 @@ def build_presentation(
             _add_panel(
                 slide,
                 "Motif back",
-                left=canvas_width * 0.82,
-                top=canvas_height * 0.34,
-                width=canvas_width * 0.09,
-                height=canvas_height * 0.18,
+                left=canvas_width * 0.80,
+                top=canvas_height * 0.31,
+                width=canvas_width * 0.08,
+                height=canvas_height * 0.14,
                 color=panel_color,
             )
             _add_panel(
                 slide,
                 "Motif front",
-                left=canvas_width * 0.85,
-                top=canvas_height * 0.41,
-                width=canvas_width * 0.09,
-                height=canvas_height * 0.18,
+                left=canvas_width * 0.86,
+                top=canvas_height * 0.50,
+                width=canvas_width * 0.08,
+                height=canvas_height * 0.14,
                 color=primary,
             )
             _add_text(

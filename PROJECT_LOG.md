@@ -134,3 +134,12 @@
 - Tests run: documentation read-back and `git diff --check`; production behavior is unchanged at this design checkpoint.
 - Open issues: implementation has not started.
 - Next action: establish the shared validation/rendering foundation, then implement `section`, `title_bullets`, `image_text`, `comparison`, `timeline`, `table`, and `chart` in order.
+
+## 2026-09-21 — Task 5 editable layout expansion
+
+- Task: Add seven strict, native, editable PowerPoint layouts and prove them through a single nine-slide example.
+- Decisions: preserve the version 1 dictionary API; fail closed on overflow; embed spec-relative PNG/JPEG assets; use native PowerPoint tables and column/line charts; recursively canonicalize embedded chart workbooks for cross-process byte determinism.
+- Files changed: presentation validation, PPTX rendering, model/renderer/example tests, nine-slide example and image asset, README, and this project log.
+- Tests run: focused RED→GREEN validation and renderer tests for every layout; 142-test suite; offline sdist/wheel build; CLI help; example validate/build/verify; delayed cross-process byte comparison; structural native table/chart/picture checks; LibreOffice PDF/PNG rendering and visual review of all nine slides; `git diff --check`.
+- Open issues: automated visual regression and deeper PPTX inspection remain future work; DOCX output is not implemented.
+- Next action: review the completed Task 5 changes and decide whether to prepare a new patch release.
