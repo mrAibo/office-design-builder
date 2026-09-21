@@ -2,7 +2,7 @@
 
 Office Design Builder (`odb`) creates editable PowerPoint presentations from JSON specifications and visual references. Generated slides contain native PowerPoint text boxes and shapes, so users can continue editing them in PowerPoint or LibreOffice Impress.
 
-Current release: [v0.1.0](https://github.com/mrAibo/office-design-builder/releases/tag/v0.1.0)
+Current release: [v0.1.1 on PyPI](https://pypi.org/project/office-design-builder/0.1.1/)
 
 ## What it does
 
@@ -24,20 +24,20 @@ The current renderer supports `title` and `two_column` slides.
 
 ## Install the released package
 
-The project is not published to PyPI yet. Download the wheel from the [v0.1.0 release](https://github.com/mrAibo/office-design-builder/releases/tag/v0.1.0), then install it in a virtual environment.
+Install the exact release from PyPI in a virtual environment.
 
 With `uv`:
 
 ```bash
 uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python ./office_design_builder-0.1.0-py3-none-any.whl
+uv pip install --python .venv/bin/python office-design-builder==0.1.1
 ```
 
 On Windows PowerShell, use the virtual environment's Windows Python path:
 
 ```powershell
 uv venv --python 3.12 .venv
-uv pip install --python .venv\Scripts\python.exe .\office_design_builder-0.1.0-py3-none-any.whl
+uv pip install --python .venv\Scripts\python.exe office-design-builder==0.1.1
 ```
 
 On Linux or macOS, run the installed command as:
@@ -50,12 +50,6 @@ On Windows:
 
 ```powershell
 .venv\Scripts\odb.exe --help
-```
-
-On Linux or macOS, verify the downloaded release files with the published checksum file:
-
-```bash
-sha256sum -c SHA256SUMS
 ```
 
 ## Quick start
@@ -297,7 +291,7 @@ odb --help
 - Raster references do not reveal font identity or semantic layout.
 - OCR, charts, tables, images, animations, speaker notes, and template-preserving cloning are not implemented.
 - `verify` performs structural checks, not visual checks.
-- The package is currently distributed through GitHub Releases. Trusted Publishing for PyPI is prepared but not enabled; see [the publishing guide](docs/publishing.md).
+- PyPI releases use tag-gated Trusted Publishing; see [the publishing guide](docs/publishing.md).
 
 ## Development setup
 
