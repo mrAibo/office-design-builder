@@ -382,6 +382,68 @@ def build_presentation(
             )
             continue
 
+        if slide_spec["layout"] == "comparison":
+            gap = canvas_width * 0.035
+            panel_width = (canvas_width - 2 * margin - gap) / 2
+            panel_top = canvas_height * 0.27
+            panel_height = canvas_height * 0.58
+            right_left = margin + panel_width + gap
+            _add_panel(
+                slide,
+                "Title accent",
+                left=margin,
+                top=canvas_height * 0.085,
+                width=0.12,
+                height=canvas_height * 0.095,
+                color=primary,
+            )
+            _add_text(
+                slide,
+                slide_spec["title"],
+                left=margin + 0.32,
+                top=canvas_height * 0.08,
+                width=canvas_width - 2 * margin - 0.32,
+                height=canvas_height * 0.12,
+                font_name=heading_font,
+                font_size=heading_size - 6,
+                color=primary,
+                bold=True,
+            )
+            for side, panel_left in (("left", margin), ("right", right_left)):
+                _add_panel(
+                    slide,
+                    f"Comparison {side} panel",
+                    left=panel_left,
+                    top=panel_top,
+                    width=panel_width,
+                    height=panel_height,
+                    color=panel_color,
+                )
+                _add_text(
+                    slide,
+                    slide_spec[f"{side}_title"],
+                    left=panel_left + 0.35,
+                    top=panel_top + 0.3,
+                    width=panel_width - 0.7,
+                    height=0.45,
+                    font_name=heading_font,
+                    font_size=body_size + 4,
+                    color=primary,
+                    bold=True,
+                )
+                _add_bullets(
+                    slide,
+                    slide_spec[side],
+                    left=panel_left + 0.25,
+                    top=panel_top + 1.0,
+                    width=panel_width - 0.5,
+                    height=panel_height - 1.3,
+                    font_name=body_font,
+                    font_size=body_size,
+                    color=primary,
+                )
+            continue
+
         gap = canvas_width * 0.035
         item_count = max(len(slide_spec["left"]), len(slide_spec["right"]))
         panel_height = min(canvas_height * 0.42, 0.7 + 0.5 * item_count)

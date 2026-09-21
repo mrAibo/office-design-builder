@@ -151,6 +151,14 @@ class PresentationSpecV1:
             "section": {"layout", "title"},
             "title_bullets": {"layout", "title", "bullets"},
             "image_text": {"layout", "title", "image", "image_alt", "body"},
+            "comparison": {
+                "layout",
+                "title",
+                "left_title",
+                "left",
+                "right_title",
+                "right",
+            },
         }
         allowed_fields = {
             "title": required_fields["title"] | {"subtitle"},
@@ -158,6 +166,7 @@ class PresentationSpecV1:
             "section": required_fields["section"] | {"subtitle"},
             "title_bullets": required_fields["title_bullets"],
             "image_text": required_fields["image_text"] | {"image_position"},
+            "comparison": required_fields["comparison"],
         }
         for index, raw_slide in enumerate(spec.slides):
             slide = _require_object(raw_slide, f"slides[{index}]")
@@ -209,6 +218,18 @@ class PresentationSpecV1:
                 if position not in {"left", "right"}:
                     raise InvalidSpecError(
                         f"slides[{index}].image_position must be left or right"
+                    )
+            if layout == "comparison":
+                for field in ("left_title", "right_title"):
+                    _require_bounded_string(
+                        slide[field], f"slides[{index}].{field}", 40
+                    )
+                for field in ("left", "right"):
+                    _require_bounded_string_list(
+                        slide[field],
+                        f"slides[{index}].{field}",
+                        maximum_items=4,
+                        maximum_length=160,
                     )
         return spec
 

@@ -341,6 +341,53 @@ def test_build_presentation_rejects_missing_image_without_output(tmp_path: Path)
     assert not output.exists()
 
 
+def test_build_presentation_renders_editable_comparison(tmp_path: Path) -> None:
+    spec = PresentationSpecV1.from_dict(
+        {
+            "version": "1",
+            "title": "Build or buy",
+            "slides": [
+                {
+                    "layout": "comparison",
+                    "title": "Build or buy",
+                    "left_title": "Build",
+                    "left": ["Full control", "Higher effort"],
+                    "right_title": "Buy",
+                    "right": ["Fast adoption", "Vendor dependency"],
+                }
+            ],
+        }
+    )
+    fingerprint = StyleFingerprintV1.from_dict(
+        {
+            "version": "1",
+            "canvas": {"width": 13.333, "height": 7.5, "aspect_ratio": 1.7777},
+            "palette": ["#17324D", "#E7EEF5"],
+            "typography": {"heading_font": "Aptos", "body_font": "Aptos"},
+            "geometry": {},
+            "density": "balanced",
+            "motif": "offset_blocks",
+        }
+    )
+    output = tmp_path / "comparison.pptx"
+
+    build_presentation(spec, fingerprint, output)
+
+    result = Presentation(str(output))
+    slide = result.slides[0]
+    shapes = [cast(Any, shape) for shape in slide.shapes]
+    names = {shape.name for shape in shapes}
+    texts = [shape.text for shape in shapes if shape.has_text_frame and shape.text]
+    assert {"Comparison left panel", "Comparison right panel"} <= names
+    assert texts == [
+        "Build or buy",
+        "Build",
+        "Full control\nHigher effort",
+        "Buy",
+        "Fast adoption\nVendor dependency",
+    ]
+
+
 def test_build_presentation_is_byte_deterministic(tmp_path: Path) -> None:
     spec = PresentationSpecV1.from_dict(
         {

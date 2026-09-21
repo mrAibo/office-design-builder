@@ -321,6 +321,52 @@ def test_presentation_spec_rejects_invalid_image_text_fields(field, value) -> No
         PresentationSpecV1.from_dict(payload)
 
 
+def test_presentation_spec_accepts_comparison_layout() -> None:
+    payload = {
+        "version": "1",
+        "title": "Build or buy",
+        "slides": [
+            {
+                "layout": "comparison",
+                "title": "Build or buy",
+                "left_title": "Build",
+                "left": ["Full control", "Higher effort"],
+                "right_title": "Buy",
+                "right": ["Fast adoption", "Vendor dependency"],
+            }
+        ],
+    }
+
+    assert PresentationSpecV1.from_dict(payload).to_dict() == payload
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("left_title", "x" * 41),
+        ("right_title", ""),
+        ("left", []),
+        ("left", ["item"] * 5),
+        ("right", ["x" * 161]),
+        ("right", [42]),
+    ],
+)
+def test_presentation_spec_rejects_invalid_comparison_fields(field, value) -> None:
+    slide = {
+        "layout": "comparison",
+        "title": "Build or buy",
+        "left_title": "Build",
+        "left": ["Full control"],
+        "right_title": "Buy",
+        "right": ["Fast adoption"],
+    }
+    slide[field] = value
+    payload = {"version": "1", "title": "Review", "slides": [slide]}
+
+    with pytest.raises(InvalidSpecError, match=rf"slides\[0\]\.{field}"):
+        PresentationSpecV1.from_dict(payload)
+
+
 def test_presentation_spec_round_trips_supported_layouts() -> None:
     payload = {
         "version": "1",
