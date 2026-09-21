@@ -367,6 +367,47 @@ def test_presentation_spec_rejects_invalid_comparison_fields(field, value) -> No
         PresentationSpecV1.from_dict(payload)
 
 
+def test_presentation_spec_accepts_timeline_layout() -> None:
+    payload = {
+        "version": "1",
+        "title": "Delivery plan",
+        "slides": [
+            {
+                "layout": "timeline",
+                "title": "Delivery plan",
+                "events": [
+                    {"label": "Q1", "description": "Prototype"},
+                    {"label": "Q2", "description": "Pilot"},
+                ],
+            }
+        ],
+    }
+
+    assert PresentationSpecV1.from_dict(payload).to_dict() == payload
+
+
+@pytest.mark.parametrize(
+    "events",
+    [
+        [],
+        [{"label": "Q1", "description": "Only one"}],
+        [{"label": f"Q{i}", "description": "Event"} for i in range(7)],
+        [{"label": "x" * 41, "description": "Event"}, {"label": "Q2", "description": "Pilot"}],
+        [{"label": "Q1", "description": "x" * 201}, {"label": "Q2", "description": "Pilot"}],
+        [{"label": "Q1", "description": "Event", "date": "2027"}, {"label": "Q2", "description": "Pilot"}],
+    ],
+)
+def test_presentation_spec_rejects_invalid_timeline_events(events) -> None:
+    payload = {
+        "version": "1",
+        "title": "Delivery plan",
+        "slides": [{"layout": "timeline", "title": "Delivery plan", "events": events}],
+    }
+
+    with pytest.raises(InvalidSpecError, match=r"slides\[0\]\.events"):
+        PresentationSpecV1.from_dict(payload)
+
+
 def test_presentation_spec_round_trips_supported_layouts() -> None:
     payload = {
         "version": "1",

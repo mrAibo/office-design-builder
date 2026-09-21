@@ -159,6 +159,7 @@ class PresentationSpecV1:
                 "right_title",
                 "right",
             },
+            "timeline": {"layout", "title", "events"},
         }
         allowed_fields = {
             "title": required_fields["title"] | {"subtitle"},
@@ -167,6 +168,7 @@ class PresentationSpecV1:
             "title_bullets": required_fields["title_bullets"],
             "image_text": required_fields["image_text"] | {"image_position"},
             "comparison": required_fields["comparison"],
+            "timeline": required_fields["timeline"],
         }
         for index, raw_slide in enumerate(spec.slides):
             slide = _require_object(raw_slide, f"slides[{index}]")
@@ -230,6 +232,25 @@ class PresentationSpecV1:
                         f"slides[{index}].{field}",
                         maximum_items=4,
                         maximum_length=160,
+                    )
+            if layout == "timeline":
+                events = _require_nonempty_list(
+                    slide["events"], f"slides[{index}].events"
+                )
+                if not 2 <= len(events) <= 6:
+                    raise InvalidSpecError(
+                        f"slides[{index}].events must contain between 2 and 6 items"
+                    )
+                for event_index, raw_event in enumerate(events):
+                    path = f"slides[{index}].events[{event_index}]"
+                    event = _require_object(raw_event, path)
+                    if event.keys() != {"label", "description"}:
+                        raise InvalidSpecError(
+                            f"{path} must contain exactly label and description"
+                        )
+                    _require_bounded_string(event["label"], f"{path}.label", 40)
+                    _require_bounded_string(
+                        event["description"], f"{path}.description", 200
                     )
         return spec
 

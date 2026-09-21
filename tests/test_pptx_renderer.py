@@ -388,6 +388,50 @@ def test_build_presentation_renders_editable_comparison(tmp_path: Path) -> None:
     ]
 
 
+def test_build_presentation_renders_editable_timeline(tmp_path: Path) -> None:
+    spec = PresentationSpecV1.from_dict(
+        {
+            "version": "1",
+            "title": "Delivery plan",
+            "slides": [
+                {
+                    "layout": "timeline",
+                    "title": "Delivery plan",
+                    "events": [
+                        {"label": "Q1", "description": "Prototype"},
+                        {"label": "Q2", "description": "Pilot"},
+                        {"label": "Q3", "description": "Launch"},
+                    ],
+                }
+            ],
+        }
+    )
+    fingerprint = StyleFingerprintV1.from_dict(
+        {
+            "version": "1",
+            "canvas": {"width": 13.333, "height": 7.5, "aspect_ratio": 1.7777},
+            "palette": ["#17324D", "#E7EEF5"],
+            "typography": {"heading_font": "Aptos", "body_font": "Aptos"},
+            "geometry": {},
+            "density": "balanced",
+            "motif": "none",
+        }
+    )
+    output_path = tmp_path / "timeline.pptx"
+
+    build_presentation(spec, fingerprint, output_path)
+
+    result = Presentation(str(output_path))
+    slide = result.slides[0]
+    text_shapes = [cast(Any, shape) for shape in slide.shapes if shape.has_text_frame]
+    texts = [shape.text for shape in text_shapes if shape.text]
+    assert texts == ["Delivery plan", "Q1", "Prototype", "Q2", "Pilot", "Q3", "Launch"]
+    assert {"Timeline rail", "Timeline marker 1", "Timeline marker 2", "Timeline marker 3"} <= {
+        shape.name for shape in slide.shapes
+    }
+    assert all(shape.shape_type != MSO_SHAPE_TYPE.PICTURE for shape in slide.shapes)
+
+
 def test_build_presentation_is_byte_deterministic(tmp_path: Path) -> None:
     spec = PresentationSpecV1.from_dict(
         {

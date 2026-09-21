@@ -11,6 +11,7 @@ from PIL import Image
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
+from pptx.enum.text import PP_ALIGN
 from pptx.oxml.xmlchemy import OxmlElement
 from pptx.util import Inches, Pt
 
@@ -103,6 +104,7 @@ def _add_text(
     font_size: int,
     color: RGBColor,
     bold: bool = False,
+    alignment: PP_ALIGN | None = None,
 ) -> None:
     shape = slide.shapes.add_textbox(
         Inches(left), Inches(top), Inches(width), Inches(height)
@@ -112,6 +114,7 @@ def _add_text(
     shape.text_frame.margin_top = 0
     shape.text_frame.margin_bottom = 0
     paragraph = shape.text_frame.paragraphs[0]
+    paragraph.alignment = alignment
     run = paragraph.add_run()
     run.text = text
     run.font.name = font_name
@@ -441,6 +444,85 @@ def build_presentation(
                     font_name=body_font,
                     font_size=body_size,
                     color=primary,
+                )
+            continue
+
+        if slide_spec["layout"] == "timeline":
+            _add_panel(
+                slide,
+                "Title accent",
+                left=margin,
+                top=canvas_height * 0.085,
+                width=0.12,
+                height=canvas_height * 0.095,
+                color=primary,
+            )
+            _add_text(
+                slide,
+                slide_spec["title"],
+                left=margin + 0.32,
+                top=canvas_height * 0.08,
+                width=canvas_width - 2 * margin - 0.32,
+                height=canvas_height * 0.12,
+                font_name=heading_font,
+                font_size=heading_size - 6,
+                color=primary,
+                bold=True,
+            )
+            events = slide_spec["events"]
+            available_width = canvas_width - 2 * margin
+            label_width = min(1.45, available_width * 0.8 / len(events))
+            rail_left = margin + label_width / 2
+            rail_width = available_width - label_width
+            rail_top = canvas_height * 0.48
+            _add_panel(
+                slide,
+                "Timeline rail",
+                left=rail_left,
+                top=rail_top,
+                width=rail_width,
+                height=0.06,
+                color=panel_color,
+            )
+            step = rail_width / (len(events) - 1)
+            for event_index, event in enumerate(events):
+                center = rail_left + event_index * step
+                marker = slide.shapes.add_shape(
+                    MSO_SHAPE.OVAL,
+                    Inches(center - 0.12),
+                    Inches(rail_top - 0.09),
+                    Inches(0.24),
+                    Inches(0.24),
+                )
+                marker.name = f"Timeline marker {event_index + 1}"
+                marker.fill.solid()
+                marker.fill.fore_color.rgb = primary
+                marker.line.fill.background()
+                text_left = center - label_width / 2
+                _add_text(
+                    slide,
+                    event["label"],
+                    left=text_left,
+                    top=rail_top - 0.78,
+                    width=label_width,
+                    height=0.36,
+                    font_name=heading_font,
+                    font_size=body_size,
+                    color=primary,
+                    bold=True,
+                    alignment=PP_ALIGN.CENTER,
+                )
+                _add_text(
+                    slide,
+                    event["description"],
+                    left=text_left,
+                    top=rail_top + 0.48,
+                    width=label_width,
+                    height=1.15,
+                    font_name=body_font,
+                    font_size=body_size - 2,
+                    color=primary,
+                    alignment=PP_ALIGN.CENTER,
                 )
             continue
 
