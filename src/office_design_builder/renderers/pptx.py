@@ -526,6 +526,66 @@ def build_presentation(
                 )
             continue
 
+        if slide_spec["layout"] == "table":
+            _add_panel(
+                slide,
+                "Title accent",
+                left=margin,
+                top=canvas_height * 0.085,
+                width=0.12,
+                height=canvas_height * 0.095,
+                color=primary,
+            )
+            _add_text(
+                slide,
+                slide_spec["title"],
+                left=margin + 0.32,
+                top=canvas_height * 0.08,
+                width=canvas_width - 2 * margin - 0.32,
+                height=canvas_height * 0.12,
+                font_name=heading_font,
+                font_size=heading_size - 6,
+                color=primary,
+                bold=True,
+            )
+            row_count = len(slide_spec["rows"]) + 1
+            column_count = len(slide_spec["columns"])
+            table_height = min(canvas_height * 0.62, row_count * 0.52)
+            content_top = canvas_height * 0.25
+            content_height = canvas_height * 0.63
+            table_top = content_top + (content_height - table_height) / 2
+            table_shape = slide.shapes.add_table(
+                row_count,
+                column_count,
+                Inches(margin),
+                Inches(table_top),
+                Inches(canvas_width - 2 * margin),
+                Inches(table_height),
+            )
+            table_shape.name = "Data table"
+            table = table_shape.table
+            equal_column_width = Inches((canvas_width - 2 * margin) / column_count)
+            for column in table.columns:
+                column.width = equal_column_width
+            values = [slide_spec["columns"], *slide_spec["rows"]]
+            for row_index, row in enumerate(values):
+                for column_index, value in enumerate(row):
+                    cell = table.cell(row_index, column_index)
+                    cell.text = value
+                    cell.margin_left = Inches(0.12)
+                    cell.margin_right = Inches(0.12)
+                    cell.margin_top = Inches(0.06)
+                    cell.margin_bottom = Inches(0.06)
+                    cell.fill.solid()
+                    cell.fill.fore_color.rgb = primary if row_index == 0 else panel_color
+                    paragraph = cell.text_frame.paragraphs[0]
+                    run = paragraph.runs[0]
+                    run.font.name = heading_font if row_index == 0 else body_font
+                    run.font.size = Pt(body_size - 1)
+                    run.font.bold = row_index == 0
+                    run.font.color.rgb = RGBColor(255, 255, 255) if row_index == 0 else primary
+            continue
+
         gap = canvas_width * 0.035
         item_count = max(len(slide_spec["left"]), len(slide_spec["right"]))
         panel_height = min(canvas_height * 0.42, 0.7 + 0.5 * item_count)

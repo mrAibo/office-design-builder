@@ -408,6 +408,45 @@ def test_presentation_spec_rejects_invalid_timeline_events(events) -> None:
         PresentationSpecV1.from_dict(payload)
 
 
+def test_presentation_spec_accepts_table_layout() -> None:
+    payload = {
+        "version": "1",
+        "title": "Plan comparison",
+        "slides": [
+            {
+                "layout": "table",
+                "title": "Plan comparison",
+                "columns": ["Plan", "Price"],
+                "rows": [["Basic", "$10"], ["Pro", "$25"]],
+            }
+        ],
+    }
+
+    assert PresentationSpecV1.from_dict(payload).to_dict() == payload
+
+
+@pytest.mark.parametrize(
+    ("columns", "rows"),
+    [
+        (["Only"], [["value"]]),
+        ([f"C{i}" for i in range(7)], [["v"] * 7]),
+        (["A", "B"], []),
+        (["A", "B"], [["1", "2"]] * 9),
+        (["A", "B"], [["only one"]]),
+        (["A", "B"], [["x" * 81, "2"]]),
+    ],
+)
+def test_presentation_spec_rejects_invalid_table_data(columns, rows) -> None:
+    payload = {
+        "version": "1",
+        "title": "Table",
+        "slides": [{"layout": "table", "title": "Table", "columns": columns, "rows": rows}],
+    }
+
+    with pytest.raises(InvalidSpecError, match=r"slides\[0\]\.(columns|rows)"):
+        PresentationSpecV1.from_dict(payload)
+
+
 def test_presentation_spec_round_trips_supported_layouts() -> None:
     payload = {
         "version": "1",

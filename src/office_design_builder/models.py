@@ -160,6 +160,7 @@ class PresentationSpecV1:
                 "right",
             },
             "timeline": {"layout", "title", "events"},
+            "table": {"layout", "title", "columns", "rows"},
         }
         allowed_fields = {
             "title": required_fields["title"] | {"subtitle"},
@@ -169,6 +170,7 @@ class PresentationSpecV1:
             "image_text": required_fields["image_text"] | {"image_position"},
             "comparison": required_fields["comparison"],
             "timeline": required_fields["timeline"],
+            "table": required_fields["table"],
         }
         for index, raw_slide in enumerate(spec.slides):
             slide = _require_object(raw_slide, f"slides[{index}]")
@@ -252,6 +254,29 @@ class PresentationSpecV1:
                     _require_bounded_string(
                         event["description"], f"{path}.description", 200
                     )
+            if layout == "table":
+                columns = slide["columns"]
+                _require_bounded_string_list(
+                    columns,
+                    f"slides[{index}].columns",
+                    maximum_items=6,
+                    maximum_length=40,
+                )
+                if len(columns) < 2:
+                    raise InvalidSpecError(
+                        f"slides[{index}].columns must contain between 2 and 6 items"
+                    )
+                rows = _require_nonempty_list(slide["rows"], f"slides[{index}].rows")
+                if len(rows) > 8:
+                    raise InvalidSpecError(f"slides[{index}].rows must contain at most 8 items")
+                for row_index, raw_row in enumerate(rows):
+                    path = f"slides[{index}].rows[{row_index}]"
+                    if not isinstance(raw_row, list) or len(raw_row) != len(columns):
+                        raise InvalidSpecError(
+                            f"{path} must contain exactly {len(columns)} cells"
+                        )
+                    for cell_index, cell in enumerate(raw_row):
+                        _require_bounded_string(cell, f"{path}[{cell_index}]", 80)
         return spec
 
     def to_dict(self) -> dict[str, Any]:

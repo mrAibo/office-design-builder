@@ -432,6 +432,48 @@ def test_build_presentation_renders_editable_timeline(tmp_path: Path) -> None:
     assert all(shape.shape_type != MSO_SHAPE_TYPE.PICTURE for shape in slide.shapes)
 
 
+def test_build_presentation_renders_native_editable_table(tmp_path: Path) -> None:
+    spec = PresentationSpecV1.from_dict(
+        {
+            "version": "1",
+            "title": "Plan comparison",
+            "slides": [
+                {
+                    "layout": "table",
+                    "title": "Plan comparison",
+                    "columns": ["Plan", "Price"],
+                    "rows": [["Basic", "$10"], ["Pro", "$25"]],
+                }
+            ],
+        }
+    )
+    fingerprint = StyleFingerprintV1.from_dict(
+        {
+            "version": "1",
+            "canvas": {"width": 13.333, "height": 7.5, "aspect_ratio": 1.7777},
+            "palette": ["#17324D", "#E7EEF5"],
+            "typography": {"heading_font": "Aptos", "body_font": "Aptos"},
+            "geometry": {},
+            "density": "balanced",
+            "motif": "none",
+        }
+    )
+    output_path = tmp_path / "table.pptx"
+
+    build_presentation(spec, fingerprint, output_path)
+
+    result = Presentation(str(output_path))
+    tables = [cast(Any, shape).table for shape in result.slides[0].shapes if shape.has_table]
+    assert len(tables) == 1
+    table = tables[0]
+    assert [[cell.text for cell in row.cells] for row in table.rows] == [
+        ["Plan", "Price"],
+        ["Basic", "$10"],
+        ["Pro", "$25"],
+    ]
+    assert all(table.columns[0].width == column.width for column in table.columns)
+
+
 def test_build_presentation_is_byte_deterministic(tmp_path: Path) -> None:
     spec = PresentationSpecV1.from_dict(
         {
