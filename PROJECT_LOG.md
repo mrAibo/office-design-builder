@@ -125,3 +125,12 @@
 - Tests run: focused RED→GREEN version test; full pytest suite; offline package build; `twine check`; CLI help; example validate/build/verify; `git diff --check`.
 - Open issues: none for the first PyPI publication.
 - Next action: Task 4 is complete. Tag `v0.1.1` resolves to commit `af3227c60a14b45a43aac372b8ddb3aee7ae2fb9`; Publish workflow run `35549960252` succeeded; PyPI exposes both wheel and sdist; a clean Python 3.12 environment installed `office-design-builder==0.1.1`, built and verified the example, and reproduced byte-identical PPTX output.
+
+## 2026-09-21 — Task 5 layout expansion design
+
+- Task: Define the public contracts, fail-closed limits, asset rules, native Office semantics, and implementation sequence for seven additional editable layouts.
+- Decisions: keep layout-specific dictionaries in `PresentationSpecV1`; reject overflow before rendering; resolve local PNG/JPEG assets relative to the specification file; support native column and line charts; implement and accept one layout per commit.
+- Files changed: approved layout design, detailed implementation plan, and this project log.
+- Tests run: documentation read-back and `git diff --check`; production behavior is unchanged at this design checkpoint.
+- Open issues: implementation has not started.
+- Next action: establish the shared validation/rendering foundation, then implement `section`, `title_bullets`, `image_text`, `comparison`, `timeline`, `table`, and `chart` in order.
