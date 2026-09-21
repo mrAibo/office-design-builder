@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from math import isfinite
+from pathlib import PurePosixPath, PureWindowsPath
 from re import fullmatch
 from typing import Any
 
@@ -59,6 +60,19 @@ def _require_bounded_string_list(
         raise InvalidSpecError(f"{path} must contain at most {maximum_items} items")
     for index, item in enumerate(items):
         _require_bounded_string(item, f"{path}[{index}]", maximum_length)
+
+
+def _require_relative_image_path(value: Any, path: str) -> None:
+    _require_nonempty_string(value, path)
+    assert isinstance(value, str)
+    posix = PurePosixPath(value.replace("\\", "/"))
+    windows = PureWindowsPath(value)
+    if "://" in value or posix.is_absolute() or windows.is_absolute() or windows.drive:
+        raise InvalidSpecError(f"{path} must be a relative local path")
+    if ".." in posix.parts:
+        raise InvalidSpecError(f"{path} must not contain parent traversal")
+    if posix.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+        raise InvalidSpecError(f"{path} must reference a PNG or JPEG file")
 
 
 def _validate_canvas(value: Any) -> None:
@@ -136,12 +150,14 @@ class PresentationSpecV1:
             "two_column": {"layout", "title", "left", "right"},
             "section": {"layout", "title"},
             "title_bullets": {"layout", "title", "bullets"},
+            "image_text": {"layout", "title", "image", "image_alt", "body"},
         }
         allowed_fields = {
             "title": required_fields["title"] | {"subtitle"},
             "two_column": required_fields["two_column"],
             "section": required_fields["section"] | {"subtitle"},
             "title_bullets": required_fields["title_bullets"],
+            "image_text": required_fields["image_text"] | {"image_position"},
         }
         for index, raw_slide in enumerate(spec.slides):
             slide = _require_object(raw_slide, f"slides[{index}]")
@@ -176,6 +192,24 @@ class PresentationSpecV1:
                     maximum_items=6,
                     maximum_length=160,
                 )
+            if layout == "image_text":
+                _require_relative_image_path(
+                    slide["image"], f"slides[{index}].image"
+                )
+                _require_bounded_string(
+                    slide["image_alt"], f"slides[{index}].image_alt", 160
+                )
+                _require_bounded_string_list(
+                    slide["body"],
+                    f"slides[{index}].body",
+                    maximum_items=5,
+                    maximum_length=160,
+                )
+                position = slide.get("image_position", "left")
+                if position not in {"left", "right"}:
+                    raise InvalidSpecError(
+                        f"slides[{index}].image_position must be left or right"
+                    )
         return spec
 
     def to_dict(self) -> dict[str, Any]:

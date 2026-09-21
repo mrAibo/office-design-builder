@@ -7,12 +7,14 @@ from pathlib import Path
 from typing import Any
 from zipfile import ZipFile, ZipInfo
 
+from PIL import Image
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
 from pptx.oxml.xmlchemy import OxmlElement
 from pptx.util import Inches, Pt
 
+from office_design_builder.errors import InvalidSpecError
 from office_design_builder.models import PresentationSpecV1, StyleFingerprintV1
 
 _FIXED_TIMESTAMP = datetime(2000, 1, 1)
@@ -39,6 +41,31 @@ def _tint(color: RGBColor, ratio: float = 0.25) -> RGBColor:
     return RGBColor(
         *(round(255 + (channel - 255) * ratio) for channel in color)
     )
+
+
+def _preflight_images(
+    spec: PresentationSpecV1, asset_root: Path | None
+) -> dict[str, tuple[Path, int, int]]:
+    image_slides = [slide for slide in spec.slides if slide["layout"] == "image_text"]
+    if not image_slides:
+        return {}
+    if asset_root is None:
+        raise InvalidSpecError("asset_root is required for image_text slides")
+    root = asset_root.resolve()
+    assets: dict[str, tuple[Path, int, int]] = {}
+    for slide in image_slides:
+        relative = slide["image"].replace("\\", "/")
+        path = (root / relative).resolve()
+        if path != root and root not in path.parents:
+            raise InvalidSpecError(f"image asset escapes asset_root: {slide['image']}")
+        try:
+            with Image.open(path) as image:
+                width, height = image.size
+                image.verify()
+        except (OSError, ValueError) as exc:
+            raise InvalidSpecError(f"invalid image asset: {slide['image']}") from exc
+        assets[slide["image"]] = (path, width, height)
+    return assets
 
 
 def _add_panel(
@@ -119,7 +146,10 @@ def _add_bullets(
         paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
         bullet = OxmlElement("a:buChar")
         bullet.set("char", "•")
-        paragraph._p.get_or_add_pPr().append(bullet)
+        properties = paragraph._p.get_or_add_pPr()
+        properties.set("marL", str(Inches(0.3)))
+        properties.set("indent", str(-Inches(0.18)))
+        properties.append(bullet)
         paragraph.space_after = Pt(10)
         run = paragraph.add_run()
         run.text = item
@@ -132,7 +162,10 @@ def build_presentation(
     spec: PresentationSpecV1,
     fingerprint: StyleFingerprintV1,
     output_path: Path,
+    *,
+    asset_root: Path | None = None,
 ) -> Path:
+    image_assets = _preflight_images(spec, asset_root)
     presentation = Presentation()
     presentation.core_properties.created = _FIXED_TIMESTAMP
     presentation.core_properties.modified = _FIXED_TIMESTAMP
@@ -288,6 +321,63 @@ def build_presentation(
                 height=canvas_height * 0.55,
                 font_name=body_font,
                 font_size=body_size + 2,
+                color=primary,
+            )
+            continue
+
+        if slide_spec["layout"] == "image_text":
+            _add_panel(
+                slide,
+                "Title accent",
+                left=margin,
+                top=canvas_height * 0.085,
+                width=0.12,
+                height=canvas_height * 0.095,
+                color=primary,
+            )
+            _add_text(
+                slide,
+                slide_spec["title"],
+                left=margin + 0.32,
+                top=canvas_height * 0.08,
+                width=canvas_width - 2 * margin - 0.32,
+                height=canvas_height * 0.12,
+                font_name=heading_font,
+                font_size=heading_size - 6,
+                color=primary,
+                bold=True,
+            )
+            gap = canvas_width * 0.045
+            region_width = (canvas_width - 2 * margin - gap) / 2
+            region_top = canvas_height * 0.27
+            region_height = canvas_height * 0.58
+            image_left = margin
+            text_left = margin + region_width + gap
+            if slide_spec.get("image_position", "left") == "right":
+                image_left, text_left = text_left, image_left
+            path, pixel_width, pixel_height = image_assets[slide_spec["image"]]
+            scale = min(region_width / pixel_width, region_height / pixel_height)
+            picture_width = pixel_width * scale
+            picture_height = pixel_height * scale
+            picture = slide.shapes.add_picture(
+                str(path),
+                Inches(image_left + (region_width - picture_width) / 2),
+                Inches(region_top + (region_height - picture_height) / 2),
+                width=Inches(picture_width),
+                height=Inches(picture_height),
+            )
+            picture.name = f"Image: {slide_spec['image_alt']}"
+            body_height = 0.55 * len(slide_spec["body"])
+            body_top = region_top + (region_height - body_height) / 2
+            _add_bullets(
+                slide,
+                slide_spec["body"],
+                left=text_left + 0.15,
+                top=body_top,
+                width=region_width - 0.3,
+                height=body_height,
+                font_name=body_font,
+                font_size=body_size,
                 color=primary,
             )
             continue

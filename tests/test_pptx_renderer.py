@@ -2,6 +2,8 @@ from pathlib import Path
 from time import sleep
 from typing import Any, cast
 
+import pytest
+from PIL import Image
 from pptx import Presentation
 from pptx.enum.shapes import MSO_SHAPE_TYPE
 
@@ -254,6 +256,89 @@ def test_build_presentation_renders_native_title_bullets(tmp_path: Path) -> None
         "Determinism",
     ]
     assert all("<a:buChar" in paragraph._p.xml for paragraph in bullet_shape.text_frame.paragraphs)
+
+
+def test_build_presentation_embeds_image_text_asset(tmp_path: Path) -> None:
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    Image.new("RGB", (400, 200), color=(23, 50, 77)).save(assets / "product.png")
+    spec = PresentationSpecV1.from_dict(
+        {
+            "version": "1",
+            "title": "Product",
+            "slides": [
+                {
+                    "layout": "image_text",
+                    "title": "Product",
+                    "image": "assets/product.png",
+                    "image_alt": "Product dashboard",
+                    "body": ["Local-first workflow", "Editable output"],
+                    "image_position": "left",
+                }
+            ],
+        }
+    )
+    fingerprint = StyleFingerprintV1.from_dict(
+        {
+            "version": "1",
+            "canvas": {"width": 13.333, "height": 7.5, "aspect_ratio": 1.7777},
+            "palette": ["#17324D", "#E7EEF5"],
+            "typography": {"heading_font": "Aptos", "body_font": "Aptos"},
+            "geometry": {},
+            "density": "balanced",
+            "motif": "offset_blocks",
+        }
+    )
+    output = tmp_path / "image-text.pptx"
+    repeated = tmp_path / "image-text-repeated.pptx"
+
+    build_presentation(spec, fingerprint, output, asset_root=tmp_path)
+    build_presentation(spec, fingerprint, repeated, asset_root=tmp_path)
+
+    assert output.read_bytes() == repeated.read_bytes()
+    result = Presentation(str(output))
+    slide = result.slides[0]
+    pictures = [shape for shape in slide.shapes if shape.shape_type == MSO_SHAPE_TYPE.PICTURE]
+    assert len(pictures) == 1
+    assert pictures[0].name == "Image: Product dashboard"
+    assert pictures[0].width / pictures[0].height == pytest.approx(2.0, rel=0.01)
+    texts = [cast(Any, shape).text for shape in slide.shapes if shape.has_text_frame and cast(Any, shape).text]
+    assert texts == ["Product", "Local-first workflow\nEditable output"]
+
+
+def test_build_presentation_rejects_missing_image_without_output(tmp_path: Path) -> None:
+    spec = PresentationSpecV1.from_dict(
+        {
+            "version": "1",
+            "title": "Product",
+            "slides": [
+                {
+                    "layout": "image_text",
+                    "title": "Product",
+                    "image": "assets/missing.png",
+                    "image_alt": "Missing",
+                    "body": ["Body"],
+                }
+            ],
+        }
+    )
+    fingerprint = StyleFingerprintV1.from_dict(
+        {
+            "version": "1",
+            "canvas": {"width": 13.333, "height": 7.5, "aspect_ratio": 1.7777},
+            "palette": ["#17324D"],
+            "typography": {"heading_font": "Aptos", "body_font": "Aptos"},
+            "geometry": {},
+            "density": "balanced",
+            "motif": "none",
+        }
+    )
+    output = tmp_path / "missing.pptx"
+
+    with pytest.raises(ValueError, match="assets/missing.png"):
+        build_presentation(spec, fingerprint, output, asset_root=tmp_path)
+
+    assert not output.exists()
 
 
 def test_build_presentation_is_byte_deterministic(tmp_path: Path) -> None:

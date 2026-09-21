@@ -88,7 +88,12 @@ def main(argv: list[str] | None = None) -> int:
             spec = PresentationSpecV1.from_dict(_read_json(arguments.spec))
             fingerprint = StyleFingerprintV1.from_dict(_read_json(arguments.fingerprint))
             try:
-                build_presentation(spec, fingerprint, arguments.output)
+                build_presentation(
+                    spec,
+                    fingerprint,
+                    arguments.output,
+                    asset_root=arguments.spec.parent,
+                )
             except OSError as exc:
                 raise OutputWriteError(f"{arguments.output}: {exc}") from exc
         elif arguments.command == "verify":

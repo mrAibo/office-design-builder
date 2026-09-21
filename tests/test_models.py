@@ -271,6 +271,56 @@ def test_presentation_spec_rejects_invalid_title_bullets(bullets) -> None:
         PresentationSpecV1.from_dict(payload)
 
 
+def test_presentation_spec_accepts_image_text_layout() -> None:
+    payload = {
+        "version": "1",
+        "title": "Product",
+        "slides": [
+            {
+                "layout": "image_text",
+                "title": "Product",
+                "image": "assets/product.png",
+                "image_alt": "Product dashboard",
+                "body": ["Local-first workflow", "Editable output"],
+                "image_position": "left",
+            }
+        ],
+    }
+
+    assert PresentationSpecV1.from_dict(payload).to_dict() == payload
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("image", "https://example.com/product.png"),
+        ("image", "/tmp/product.png"),
+        ("image", "C:\\assets\\product.png"),
+        ("image", "../product.png"),
+        ("image", "assets/product.gif"),
+        ("image_alt", ""),
+        ("body", []),
+        ("body", ["item"] * 6),
+        ("body", ["x" * 161]),
+        ("image_position", "center"),
+    ],
+)
+def test_presentation_spec_rejects_invalid_image_text_fields(field, value) -> None:
+    slide = {
+        "layout": "image_text",
+        "title": "Product",
+        "image": "assets/product.png",
+        "image_alt": "Product dashboard",
+        "body": ["Editable output"],
+        "image_position": "left",
+    }
+    slide[field] = value
+    payload = {"version": "1", "title": "Product", "slides": [slide]}
+
+    with pytest.raises(InvalidSpecError, match=rf"slides\[0\]\.{field}"):
+        PresentationSpecV1.from_dict(payload)
+
+
 def test_presentation_spec_round_trips_supported_layouts() -> None:
     payload = {
         "version": "1",

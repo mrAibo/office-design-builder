@@ -5,6 +5,7 @@ from pathlib import Path
 
 from PIL import Image
 from pptx import Presentation
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 
 
 def run_cli(*arguments: str) -> subprocess.CompletedProcess[str]:
@@ -176,6 +177,85 @@ def test_build_creates_editable_pptx(tmp_path: Path) -> None:
         "editable_text_shapes": 2,
         "slide_count": 1,
     }
+
+
+def test_build_resolves_image_assets_relative_to_spec(tmp_path: Path) -> None:
+    spec_dir = tmp_path / "project"
+    assets = spec_dir / "assets"
+    assets.mkdir(parents=True)
+    Image.new("RGB", (4, 2), color=(17, 34, 51)).save(assets / "product.png")
+    spec = spec_dir / "presentation.json"
+    spec.write_text(
+        json.dumps(
+            {
+                "version": "1",
+                "title": "Product",
+                "slides": [
+                    {
+                        "layout": "image_text",
+                        "title": "Product",
+                        "image": "assets/product.png",
+                        "image_alt": "Product",
+                        "body": ["Editable"],
+                    }
+                ],
+            }
+        )
+    )
+    output = tmp_path / "presentation.pptx"
+
+    result = run_cli(
+        "build",
+        str(spec),
+        "--fingerprint",
+        "examples/style-fingerprint.json",
+        "--output",
+        str(output),
+    )
+
+    assert result.returncode == 0, result.stderr
+    presentation = Presentation(str(output))
+    assert any(
+        shape.shape_type == MSO_SHAPE_TYPE.PICTURE
+        for shape in presentation.slides[0].shapes
+    )
+
+
+def test_build_reports_stable_error_for_missing_image_asset(tmp_path: Path) -> None:
+    spec = tmp_path / "presentation.json"
+    spec.write_text(
+        json.dumps(
+            {
+                "version": "1",
+                "title": "Product",
+                "slides": [
+                    {
+                        "layout": "image_text",
+                        "title": "Product",
+                        "image": "assets/missing.png",
+                        "image_alt": "Missing",
+                        "body": ["Editable"],
+                    }
+                ],
+            }
+        )
+    )
+    output = tmp_path / "presentation.pptx"
+
+    result = run_cli(
+        "build",
+        str(spec),
+        "--fingerprint",
+        "examples/style-fingerprint.json",
+        "--output",
+        str(output),
+    )
+
+    assert result.returncode == 2
+    assert result.stderr.startswith("INVALID_SPEC:")
+    assert "assets/missing.png" in result.stderr
+    assert "Traceback" not in result.stderr
+    assert not output.exists()
 
 
 def test_build_reports_stable_error_for_invalid_fingerprint(tmp_path: Path) -> None:
