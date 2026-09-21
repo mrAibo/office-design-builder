@@ -51,6 +51,16 @@ def _require_nonempty_string_list(value: Any, path: str) -> None:
         _require_nonempty_string(item, f"{path}[{index}]")
 
 
+def _require_bounded_string_list(
+    value: Any, path: str, *, maximum_items: int, maximum_length: int
+) -> None:
+    items = _require_nonempty_list(value, path)
+    if len(items) > maximum_items:
+        raise InvalidSpecError(f"{path} must contain at most {maximum_items} items")
+    for index, item in enumerate(items):
+        _require_bounded_string(item, f"{path}[{index}]", maximum_length)
+
+
 def _validate_canvas(value: Any) -> None:
     canvas = _require_object(value, "canvas")
     for field in ("width", "height", "aspect_ratio"):
@@ -125,11 +135,13 @@ class PresentationSpecV1:
             "title": {"layout", "title"},
             "two_column": {"layout", "title", "left", "right"},
             "section": {"layout", "title"},
+            "title_bullets": {"layout", "title", "bullets"},
         }
         allowed_fields = {
             "title": required_fields["title"] | {"subtitle"},
             "two_column": required_fields["two_column"],
             "section": required_fields["section"] | {"subtitle"},
+            "title_bullets": required_fields["title_bullets"],
         }
         for index, raw_slide in enumerate(spec.slides):
             slide = _require_object(raw_slide, f"slides[{index}]")
@@ -157,6 +169,13 @@ class PresentationSpecV1:
             if layout == "two_column":
                 _require_nonempty_string_list(slide["left"], f"slides[{index}].left")
                 _require_nonempty_string_list(slide["right"], f"slides[{index}].right")
+            if layout == "title_bullets":
+                _require_bounded_string_list(
+                    slide["bullets"],
+                    f"slides[{index}].bullets",
+                    maximum_items=6,
+                    maximum_length=160,
+                )
         return spec
 
     def to_dict(self) -> dict[str, Any]:

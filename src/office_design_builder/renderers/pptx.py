@@ -10,6 +10,7 @@ from zipfile import ZipFile, ZipInfo
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE
+from pptx.oxml.xmlchemy import OxmlElement
 from pptx.util import Inches, Pt
 
 from office_design_builder.models import PresentationSpecV1, StyleFingerprintV1
@@ -90,6 +91,41 @@ def _add_text(
     run.font.size = Pt(font_size)
     run.font.bold = bold
     run.font.color.rgb = color
+
+
+def _add_bullets(
+    slide: Any,
+    items: list[str],
+    *,
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    font_name: str,
+    font_size: int,
+    color: RGBColor,
+) -> None:
+    shape = slide.shapes.add_textbox(
+        Inches(left), Inches(top), Inches(width), Inches(height)
+    )
+    shape.name = "Bullet list"
+    frame = shape.text_frame
+    frame.clear()
+    frame.margin_left = Inches(0.08)
+    frame.margin_right = 0
+    frame.margin_top = 0
+    frame.margin_bottom = 0
+    for index, item in enumerate(items):
+        paragraph = frame.paragraphs[0] if index == 0 else frame.add_paragraph()
+        bullet = OxmlElement("a:buChar")
+        bullet.set("char", "•")
+        paragraph._p.get_or_add_pPr().append(bullet)
+        paragraph.space_after = Pt(10)
+        run = paragraph.add_run()
+        run.text = item
+        run.font.name = font_name
+        run.font.size = Pt(font_size)
+        run.font.color.rgb = color
 
 
 def build_presentation(
@@ -219,6 +255,41 @@ def build_presentation(
                     font_size=body_size,
                     color=primary,
                 )
+            continue
+
+        if slide_spec["layout"] == "title_bullets":
+            _add_panel(
+                slide,
+                "Title accent",
+                left=margin,
+                top=canvas_height * 0.085,
+                width=0.12,
+                height=canvas_height * 0.095,
+                color=primary,
+            )
+            _add_text(
+                slide,
+                slide_spec["title"],
+                left=margin + 0.32,
+                top=canvas_height * 0.08,
+                width=canvas_width - 2 * margin - 0.32,
+                height=canvas_height * 0.12,
+                font_name=heading_font,
+                font_size=heading_size - 6,
+                color=primary,
+                bold=True,
+            )
+            _add_bullets(
+                slide,
+                slide_spec["bullets"],
+                left=margin + 0.25,
+                top=canvas_height * 0.29,
+                width=canvas_width - 2 * margin - 0.5,
+                height=canvas_height * 0.55,
+                font_name=body_font,
+                font_size=body_size + 2,
+                color=primary,
+            )
             continue
 
         gap = canvas_width * 0.035

@@ -211,6 +211,51 @@ def test_build_presentation_renders_editable_section_slide(tmp_path: Path) -> No
     )
 
 
+def test_build_presentation_renders_native_title_bullets(tmp_path: Path) -> None:
+    spec = PresentationSpecV1.from_dict(
+        {
+            "version": "1",
+            "title": "Priorities",
+            "slides": [
+                {
+                    "layout": "title_bullets",
+                    "title": "Priorities",
+                    "bullets": ["Reliability", "Editability", "Determinism"],
+                }
+            ],
+        }
+    )
+    fingerprint = StyleFingerprintV1.from_dict(
+        {
+            "version": "1",
+            "canvas": {"width": 13.333, "height": 7.5, "aspect_ratio": 1.7777},
+            "palette": ["#17324D", "#E7EEF5"],
+            "typography": {"heading_font": "Aptos", "body_font": "Aptos"},
+            "geometry": {},
+            "density": "balanced",
+            "motif": "offset_blocks",
+        }
+    )
+    output = tmp_path / "title-bullets.pptx"
+
+    build_presentation(spec, fingerprint, output)
+
+    result = Presentation(str(output))
+    slide = result.slides[0]
+    text_shapes = [cast(Any, shape) for shape in slide.shapes if shape.has_text_frame]
+    assert [shape.text for shape in text_shapes if shape.text] == [
+        "Priorities",
+        "Reliability\nEditability\nDeterminism",
+    ]
+    bullet_shape = next(shape for shape in text_shapes if shape.text.startswith("Reliability"))
+    assert [paragraph.text for paragraph in bullet_shape.text_frame.paragraphs] == [
+        "Reliability",
+        "Editability",
+        "Determinism",
+    ]
+    assert all("<a:buChar" in paragraph._p.xml for paragraph in bullet_shape.text_frame.paragraphs)
+
+
 def test_build_presentation_is_byte_deterministic(tmp_path: Path) -> None:
     spec = PresentationSpecV1.from_dict(
         {
@@ -222,6 +267,11 @@ def test_build_presentation_is_byte_deterministic(tmp_path: Path) -> None:
                     "layout": "section",
                     "title": "Architecture",
                     "subtitle": "Deterministic section",
+                },
+                {
+                    "layout": "title_bullets",
+                    "title": "Priorities",
+                    "bullets": ["Reliable", "Editable"],
                 },
             ],
         }

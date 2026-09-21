@@ -238,6 +238,39 @@ def test_presentation_spec_rejects_invalid_section_fields(slide, field) -> None:
         PresentationSpecV1.from_dict(payload)
 
 
+def test_presentation_spec_accepts_title_bullets_layout() -> None:
+    payload = {
+        "version": "1",
+        "title": "Priorities",
+        "slides": [
+            {
+                "layout": "title_bullets",
+                "title": "Priorities",
+                "bullets": ["Reliability", "Editability", "Determinism"],
+            }
+        ],
+    }
+
+    assert PresentationSpecV1.from_dict(payload).to_dict() == payload
+
+
+@pytest.mark.parametrize(
+    "bullets",
+    [[], [""], [42], ["item"] * 7, ["x" * 161]],
+)
+def test_presentation_spec_rejects_invalid_title_bullets(bullets) -> None:
+    payload = {
+        "version": "1",
+        "title": "Priorities",
+        "slides": [
+            {"layout": "title_bullets", "title": "Priorities", "bullets": bullets}
+        ],
+    }
+
+    with pytest.raises(InvalidSpecError, match=r"slides\[0\]\.bullets"):
+        PresentationSpecV1.from_dict(payload)
+
+
 def test_presentation_spec_round_trips_supported_layouts() -> None:
     payload = {
         "version": "1",
