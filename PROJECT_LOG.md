@@ -152,3 +152,12 @@
 - Tests run: 162 tests; offline sdist/wheel build; `twine check`; fresh offline venv wheel install and both example build/verify flows; LibreOffice DOCX-to-PDF rendering and text inspection (one page). Exact release CI and PyPI download-back remain pending.
 - Open issues: automatic visual regression and deeper PPTX theme inspection remain future work; DOCX supports the agreed basic block types, not pixel-perfect reference recreation.
 - Next action: commit and push v0.2.0 candidate, require Linux/Windows CI on exact SHA, then push the version tag for Trusted Publishing and verify PyPI download-back.
+
+## 2026-09-23 — v0.2.0 publication and index propagation check
+
+- Task: Publish the verified DOCX/PPTX release.
+- Decisions: push the clean candidate commit `230acb3d19203d88189bd670d034b45aa6b7b37a` and annotated tag `v0.2.0`; preserve OIDC Trusted Publishing without a long-lived token.
+- Files changed: this post-release log only; the tagged package source is unchanged.
+- Tests run: 162 local tests; offline build and `twine check`; clean local-wheel install and both DOCX/PPTX build/verify flows; Linux/Windows CI on the candidate commit (`35852478370`) and tag (`35852598452`) successful; Publish workflow `35852598570` build and PyPI publish jobs successful. Version-specific PyPI JSON exposes wheel and sdist with SHA-256 hashes. Downloaded the public wheel by its version-specific JSON URL, verified its SHA-256, installed it in a clean Python 3.12 environment, and built/verified byte-identical DOCX and PPTX examples.
+- Open issues: the canonical `/simple/office-design-builder/` index and project-wide JSON still reported only v0.1.1 at the last check despite the v0.2.0 version-specific endpoint being live; an exact-version index-only installation failed. Do not claim index-origin acceptance until propagation is observed and retested.
+- Next action: recheck the canonical Simple API and perform index-only clean-environment installation of v0.2.0; then verify its CLI, DOCX/PPTX examples and determinism.
