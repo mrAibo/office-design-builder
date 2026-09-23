@@ -20,9 +20,10 @@ from office_design_builder.errors import (
 )
 from office_design_builder.inspectors.image import inspect_image
 from office_design_builder.inspectors.pptx import inspect_pptx
-from office_design_builder.models import PresentationSpecV1, StyleFingerprintV1
+from office_design_builder.models import DocumentSpecV1, PresentationSpecV1, StyleFingerprintV1
+from office_design_builder.renderers.docx import build_document
 from office_design_builder.renderers.pptx import build_presentation
-from office_design_builder.verify import verify_pptx
+from office_design_builder.verify import verify_docx, verify_pptx
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -33,7 +34,7 @@ def _parser() -> argparse.ArgumentParser:
     inspect.add_argument("--output", required=True, type=Path)
     validate = commands.add_parser("validate", help="validate a semantic JSON specification")
     validate.add_argument("spec", type=Path)
-    build = commands.add_parser("build", help="build an editable PPTX")
+    build = commands.add_parser("build", help="build an editable PPTX or DOCX")
     build.add_argument("spec", type=Path)
     build.add_argument("--fingerprint", required=True, type=Path)
     build.add_argument("--output", required=True, type=Path)
@@ -54,11 +55,19 @@ def _read_json(path: Path) -> dict[str, Any]:
     return payload
 
 
+def _parse_spec(payload: dict[str, Any]) -> PresentationSpecV1 | DocumentSpecV1:
+    if ("slides" in payload) == ("blocks" in payload):
+        raise InvalidSpecError("spec must contain exactly one of slides or blocks")
+    if "blocks" in payload:
+        return DocumentSpecV1.from_dict(payload)
+    return PresentationSpecV1.from_dict(payload)
+
+
 def main(argv: list[str] | None = None) -> int:
     arguments = _parser().parse_args(argv)
     try:
         if arguments.command == "validate":
-            PresentationSpecV1.from_dict(_read_json(arguments.spec))
+            _parse_spec(_read_json(arguments.spec))
         elif arguments.command == "inspect":
             if not arguments.reference.exists():
                 raise InputNotFoundError(str(arguments.reference))
@@ -85,19 +94,24 @@ def main(argv: list[str] | None = None) -> int:
             except OSError as exc:
                 raise OutputWriteError(f"{arguments.output}: {exc}") from exc
         elif arguments.command == "build":
-            spec = PresentationSpecV1.from_dict(_read_json(arguments.spec))
+            spec = _parse_spec(_read_json(arguments.spec))
             fingerprint = StyleFingerprintV1.from_dict(_read_json(arguments.fingerprint))
+            expected_suffix = ".docx" if isinstance(spec, DocumentSpecV1) else ".pptx"
+            if arguments.output.suffix.lower() != expected_suffix:
+                raise InvalidSpecError(f"output must have {expected_suffix} extension")
             try:
-                build_presentation(
-                    spec,
-                    fingerprint,
-                    arguments.output,
-                    asset_root=arguments.spec.parent,
-                )
+                if isinstance(spec, DocumentSpecV1):
+                    build_document(spec, fingerprint, arguments.output, asset_root=arguments.spec.parent)
+                else:
+                    build_presentation(spec, fingerprint, arguments.output, asset_root=arguments.spec.parent)
             except OSError as exc:
                 raise OutputWriteError(f"{arguments.output}: {exc}") from exc
         elif arguments.command == "verify":
-            print(json.dumps(verify_pptx(arguments.artifact), sort_keys=True))
+            suffix = arguments.artifact.suffix.lower()
+            if suffix not in {".pptx", ".docx"}:
+                raise VerifyError("artifact must have .pptx or .docx extension")
+            verifier = verify_docx if suffix == ".docx" else verify_pptx
+            print(json.dumps(verifier(arguments.artifact), sort_keys=True))
     except (
         InputNotFoundError,
         InvalidReferenceError,

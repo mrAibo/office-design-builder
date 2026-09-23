@@ -1,0 +1,12 @@
+{
+  "version": "1",
+  "title": "Office Design Builder — DOCX example",
+  "blocks": [
+    {"heading": {"text": "Quarterly review", "level": 1}},
+    {"paragraph": {"text": "This document demonstrates editable native Word content."}},
+    {"heading": {"text": "Highlights", "level": 2}},
+    {"bullets": {"items": ["Progress is visible", "Next steps are actionable"]}},
+    {"table": {"columns": ["Metric", "Value"], "rows": [["Coverage", "Complete"], ["Status", "Reviewed"]]}},
+    {"image": {"path": "assets/dashboard.png", "alt": "Example dashboard"}}
+  ]
+}

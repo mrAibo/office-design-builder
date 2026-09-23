@@ -1,18 +1,18 @@
 # Office Design Builder
 
-Office Design Builder (`odb`) creates editable PowerPoint presentations from JSON specifications and visual references. Generated slides contain native PowerPoint text boxes and shapes, so users can continue editing them in PowerPoint or LibreOffice Impress.
+Office Design Builder (`odb`) creates editable PowerPoint presentations and Word documents from JSON specifications and visual references. Generated slides and document content use native editable Office elements rather than full-page screenshots.
 
-Current release: [v0.1.1 on PyPI](https://pypi.org/project/office-design-builder/0.1.1/)
+Current release: [v0.2.0 on PyPI](https://pypi.org/project/office-design-builder/0.2.0/) (editable PPTX and DOCX).
 
 ## What it does
 
 - Inspects PNG, JPEG, and PPTX references.
 - Extracts slide or image dimensions, a color palette, and available typography evidence.
 - Validates versioned JSON presentation specifications.
-- Builds editable `.pptx` files with deterministic output.
-- Verifies that a generated PPTX can be opened and contains editable text.
+- Builds editable `.pptx` and `.docx` files with deterministic output.
+- Verifies that generated Office packages can be opened and contain editable content.
 
-The current renderer supports `title` and `two_column` slides.
+The renderer supports nine layouts: `title`, `two_column`, `section`, `title_bullets`, `image_text`, `comparison`, `timeline`, `table`, and `chart`.
 
 ## Requirements
 
@@ -30,14 +30,14 @@ With `uv`:
 
 ```bash
 uv venv --python 3.12 .venv
-uv pip install --python .venv/bin/python office-design-builder==0.1.1
+uv pip install --python .venv/bin/python office-design-builder==0.2.0
 ```
 
 On Windows PowerShell, use the virtual environment's Windows Python path:
 
 ```powershell
 uv venv --python 3.12 .venv
-uv pip install --python .venv\Scripts\python.exe office-design-builder==0.1.1
+uv pip install --python .venv\Scripts\python.exe office-design-builder==0.2.0
 ```
 
 On Linux or macOS, run the installed command as:
@@ -66,13 +66,29 @@ uv run --offline odb build examples/presentation.json \
 uv run --offline odb verify presentation.pptx
 ```
 
-A successful verification prints JSON similar to:
+With the current nine-slide source example, a successful verification prints:
 
 ```json
-{"editable_text_shapes": 5, "slide_count": 2}
+{"editable_text_shapes": 27, "slide_count": 9}
 ```
 
+The released v0.2.0 package supports this nine-slide example.
+
 Open `presentation.pptx` in PowerPoint or LibreOffice Impress. Text and decorative shapes remain editable.
+
+## DOCX example
+
+The DOCX MVP uses a separate `DocumentSpecV1` JSON contract, not a slide specification. From a source checkout:
+
+```bash
+uv run --offline odb validate examples/document.json
+uv run --offline odb build examples/document.json \
+  --fingerprint examples/style-fingerprint.json \
+  --output document.docx
+uv run --offline odb verify document.docx
+```
+
+The top level requires `version`, `title`, and a nonempty `blocks` array. Each ordered block is a one-key object: `{"heading": {"text": "...", "level": 1}}` (level 1–3), `{"paragraph": {"text": "..."}}`, `{"bullets": {"items": ["..."]}}`, `{"table": {"columns": ["...", "..."], "rows": [["...", "..."]]}}`, or `{"image": {"path": "assets/example.png", "alt": "..."}}`. Image paths are local PNG/JPEG files relative to the JSON specification; no URLs, absolute paths, or traversal. Fonts and colors come from the same style fingerprint used for PPTX, while its slide canvas is not a Word page size. Text, lists, and tables remain native editable Word elements; images are embedded. `verify` checks structure rather than visual quality.
 
 ## Typical workflow
 
@@ -233,9 +249,9 @@ Example:
 
 ```text
 odb inspect REFERENCE --output FINGERPRINT.json
-odb validate PRESENTATION.json
-odb build PRESENTATION.json --fingerprint FINGERPRINT.json --output OUTPUT.pptx
-odb verify OUTPUT.pptx
+odb validate PRESENTATION-or-DOCUMENT.json
+odb build PRESENTATION-or-DOCUMENT.json --fingerprint FINGERPRINT.json --output OUTPUT.pptx-or-.docx
+odb verify OUTPUT.pptx-or-.docx
 ```
 
 Use command-specific help for the accepted arguments:
@@ -301,8 +317,7 @@ odb --help
 
 ## Current limitations
 
-- Output is PPTX only. DOCX generation is not implemented.
-- The renderer does not reproduce a reference pixel for pixel.
+- Output supports editable PPTX and DOCX; neither format is a pixel-perfect reproduction of a visual reference.
 - PPTX theme inheritance is only partially inspected.
 - Raster references do not reveal font identity or semantic layout.
 - OCR, animations, speaker notes, and template-preserving cloning are not implemented.

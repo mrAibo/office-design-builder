@@ -328,3 +328,131 @@ class PresentationSpecV1:
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentSpecV1:
+    version: str
+    title: str
+    blocks: list[dict[str, Any]]
+
+    @classmethod
+    def from_dict(cls, payload: Any) -> DocumentSpecV1:
+        payload = _require_object(payload, "top-level value")
+        try:
+            validated_blocks = _validate_document_spec_blocks_new(payload.get("blocks", []))
+        except TypeError as exc:
+            raise InvalidSpecError(str(exc)) from exc
+
+        updated_payload = {**payload, "blocks": validated_blocks}
+        try:
+            spec = cls(**updated_payload)
+        except TypeError as exc:
+            raise InvalidSpecError(str(exc)) from exc
+
+        _require_v1(spec.version)
+        _require_nonempty_string(spec.title, "title")
+        return spec
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+
+def _validate_document_block(value: Any, path: str) -> dict[str, Any]:
+    block = _require_object(value, path)
+    if len(block.keys()) != 1:
+        raise InvalidSpecError(f"{path} must contain exactly one field")
+    block_type = next(iter(block.keys()))
+    if block_type not in {"heading", "paragraph", "bullets", "table", "image"}:
+        raise InvalidSpecError(f"{path} block must be one of: heading, paragraph, bullets, table, image")
+
+    # Validate the content based on block type
+    block_info = block[block_type]
+    if block_type == "heading":
+        _validate_heading(block_info, f"{path}.heading")
+    elif block_type == "paragraph":
+        _validate_paragraph(block_info, f"{path}.paragraph")
+    elif block_type == "bullets":
+        _validate_bullets(block_info, f"{path}.bullets")
+    elif block_type == "table":
+        _validate_table(block_info, f"{path}.table")
+    elif block_type == "image":
+        _validate_image(block_info, f"{path}.image")
+
+    return block
+
+
+def _validate_heading(value: Any, path: str) -> None:
+    heading = _require_object(value, path)
+    if heading.keys() - {"text", "level"}:
+        raise InvalidSpecError(f"{path} has unknown fields")
+    if "text" not in heading:
+        raise InvalidSpecError(f"{path}.text is required")
+    _require_bounded_string(heading["text"], f"{path}.text", 400)
+    if "level" in heading:
+        level = heading["level"]
+        if isinstance(level, bool) or not isinstance(level, int) or not 1 <= level <= 3:
+            raise InvalidSpecError(f"{path}.level must be an integer between 1 and 3")
+
+
+def _validate_paragraph(value: Any, path: str) -> None:
+    paragraph = _require_object(value, path)
+    if paragraph.keys() != {"text"}:
+        raise InvalidSpecError(f"{path} must contain exactly text")
+    if "text" not in paragraph:
+        raise InvalidSpecError(f"{path}.text is required")
+    _require_bounded_string(paragraph["text"], f"{path}.text", 800)
+
+
+def _validate_bullets(value: Any, path: str) -> None:
+    bullets = _require_object(value, path)
+    if bullets.keys() != {"items"}:
+        raise InvalidSpecError(f"{path} must contain exactly items")
+    if "items" not in bullets:
+        raise InvalidSpecError(f"{path}.items is required")
+    _require_nonempty_list(bullets["items"], f"{path}.items")
+    _require_bounded_string_list(bullets["items"], f"{path}.items", maximum_items=20, maximum_length=160)
+
+
+def _validate_table(value: Any, path: str) -> None:
+    table = _require_object(value, path)
+    if table.keys() != {"columns", "rows"}:
+        raise InvalidSpecError(f"{path} must contain exactly columns and rows")
+    if "columns" not in table:
+        raise InvalidSpecError(f"{path}.columns is required")
+    _require_bounded_string_list(table["columns"], f"{path}.columns", maximum_items=10, maximum_length=40)
+    if len(table["columns"]) < 2:
+        raise InvalidSpecError(f"{path}.columns must contain at least 2 items")
+    if "rows" not in table:
+        raise InvalidSpecError(f"{path}.rows is required")
+    rows = _require_nonempty_list(table["rows"], f"{path}.rows")
+    if len(rows) > 8:
+        raise InvalidSpecError(f"{path}.rows must contain at most 8 items")
+    for row_index, raw_row in enumerate(rows):
+        if not isinstance(raw_row, list) or len(raw_row) != len(table["columns"]):
+            raise InvalidSpecError(
+                f"{path}.rows[{row_index}] must contain exactly {len(table['columns'])} cells"
+            )
+        row_path = f"{path}.rows[{row_index}]"
+        for cell_index, cell in enumerate(raw_row):
+            _require_bounded_string(cell, f"{row_path}[{cell_index}]", 80)
+
+
+def _validate_image(value: Any, path: str) -> None:
+    image = _require_object(value, path)
+    if image.keys() != {"path", "alt"}:
+        raise InvalidSpecError(f"{path} must contain exactly path and alt")
+    if "path" not in image:
+        raise InvalidSpecError(f"{path}.path is required")
+    _require_relative_image_path(image["path"], f"{path}.path")
+    if "alt" not in image:
+        raise InvalidSpecError(f"{path}.alt is required")
+    _require_bounded_string(image["alt"], f"{path}.alt", 200)
+
+
+def _validate_document_spec_blocks_new(value: Any) -> list[dict[str, Any]]:
+    blocks = _require_nonempty_list(value, "blocks")
+    for index, block in enumerate(blocks):
+        path = f"blocks[{index}]"
+        _validate_document_block(block, path)
+    return blocks

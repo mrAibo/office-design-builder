@@ -4,7 +4,7 @@ Office Design Builder uses PyPI Trusted Publishing. No long-lived PyPI API token
 
 ## Current status
 
-Publication is prepared but not enabled. The package name `office-design-builder` was unregistered when checked on 2026-09-21. A maintainer must complete the human-gated setup below before creating the first publishing tag.
+The `pypi` GitHub environment and Trusted Publisher were configured for the first release. Verify their identity before each new tag. The current release is v0.2.0 (editable PPTX and DOCX); v0.1.1 remains historical.
 
 ## One-time trusted-publisher setup
 
@@ -45,7 +45,7 @@ Publication is a human-gated operation.
 5. Verify the `Publish` workflow built and checked the distributions before its publish job used Trusted Publishing.
 6. Verify the project page and uploaded filenames on PyPI.
 7. Install the exact version from PyPI in a clean Python 3.12 environment.
-8. Run `odb --help`, build the example presentation, and verify it structurally.
+8. Run `odb --help`, build and verify both the example presentation and DOCX document.
 
 ## Rollback and failure handling
 

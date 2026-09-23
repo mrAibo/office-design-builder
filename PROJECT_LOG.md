@@ -143,3 +143,12 @@
 - Tests run: focused RED→GREEN validation and renderer tests for every layout; 142-test suite; offline sdist/wheel build; CLI help; example validate/build/verify; delayed cross-process byte comparison; structural native table/chart/picture checks; LibreOffice PDF/PNG rendering and visual review of all nine slides; `git diff --check`.
 - Open issues: automated visual regression and deeper PPTX inspection remain future work; DOCX output is not implemented.
 - Next action: review the completed Task 5 changes and decide whether to prepare a new patch release.
+
+## 2026-09-23 — DOCX MVP and v0.2.0 release candidate
+
+- Task: Complete a separate editable DOCX path alongside the nine-layout PPTX renderer and prepare v0.2.0.
+- Decisions: `DocumentSpecV1` uses ordered one-key heading/paragraph/bullets/table/image blocks; CLI dispatches by `blocks` versus `slides` and requires matching `.docx`/`.pptx` output. Reuse the style fingerprint's fonts/palette, not slide canvas. Reject invalid, missing, or symlink-escaped image assets before writing output; preserve deterministic native Office output. Keep publication behind full CI and wheel download-back acceptance.
+- Files changed: document model/renderer/verifier/CLI, python-docx dependency and lock, DOCX example and tests, README, publishing guide, release version, and design note.
+- Tests run: 162 tests; offline sdist/wheel build; `twine check`; fresh offline venv wheel install and both example build/verify flows; LibreOffice DOCX-to-PDF rendering and text inspection (one page). Exact release CI and PyPI download-back remain pending.
+- Open issues: automatic visual regression and deeper PPTX theme inspection remain future work; DOCX supports the agreed basic block types, not pixel-perfect reference recreation.
+- Next action: commit and push v0.2.0 candidate, require Linux/Windows CI on exact SHA, then push the version tag for Trusted Publishing and verify PyPI download-back.
