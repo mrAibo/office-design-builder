@@ -161,3 +161,12 @@
 - Tests run: 162 local tests; offline build and `twine check`; clean local-wheel install and both DOCX/PPTX build/verify flows; Linux/Windows CI on the candidate commit (`35852478370`) and tag (`35852598452`) successful; Publish workflow `35852598570` build and PyPI publish jobs successful. Version-specific PyPI JSON exposes wheel and sdist with SHA-256 hashes. Downloaded the public wheel by its version-specific JSON URL, verified its SHA-256, installed it in a clean Python 3.12 environment, and built/verified byte-identical DOCX and PPTX examples.
 - Open issues: automatic visual regression and deeper PPTX theme inspection remain future work; DOCX is an MVP, not pixel-perfect reference recreation. The canonical Simple API initially lagged the version-specific PyPI endpoint, then propagated.
 - Next action: v0.2.0 release accepted. Exact-version install from `https://pypi.org/simple` in a new Python 3.12 environment succeeded; both installed DOCX and PPTX example build/verify paths passed with byte-identical duplicate builds. GitHub Release: `https://github.com/mrAibo/office-design-builder/releases/tag/v0.2.0`.
+
+## 2026-09-23 — README output previews
+
+- Task: Add visual examples to the GitHub README.
+- Decisions: use two real LibreOffice renders of the repository fixtures (a PPTX chart slide and the upper portion of the DOCX page), not synthetic mockups; explicitly distinguish editable native elements from the embedded document illustration.
+- Files changed: `README.md`, `assets/readme/presentation-preview.png`, `assets/readme/document-preview.png`, `PROJECT_LOG.md`.
+- Tests run: 162 local tests, offline wheel/sdist build, CLI help and `git diff --check` passed; both PNGs were inspected and README paths resolved. GitHub image read-back follows push.
+- Open issues: screenshots demonstrate appearance, not visual-regression coverage.
+- Next action: verify previews and links, push docs-only change, confirm GitHub README images load.

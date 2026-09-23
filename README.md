@@ -4,6 +4,18 @@ Office Design Builder (`odb`) creates editable PowerPoint presentations and Word
 
 Current release: [v0.2.0 on PyPI](https://pypi.org/project/office-design-builder/0.2.0/) (editable PPTX and DOCX).
 
+## Examples
+
+**Presentation:** a native PowerPoint chart and text from [`examples/presentation.json`](examples/presentation.json).
+
+<img src="assets/readme/presentation-preview.png" alt="Rendered example slide with a column chart titled Artifact coverage, four categories, and a legend" width="760">
+
+**Document:** headings, bullets, a table, and an embedded image from [`examples/document.json`](examples/document.json).
+
+<img src="assets/readme/document-preview.png" alt="Cropped top of the example Word document showing a Quarterly review heading, bullet list, table, and embedded chart illustration" width="520">
+
+These previews were rendered from the included examples with LibreOffice. They show appearance only; the generated Office files retain native editable text, tables, and charts (the document's illustration is an embedded image).
+
 ## What it does
 
 - Inspects PNG, JPEG, and PPTX references.
