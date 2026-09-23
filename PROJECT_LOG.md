@@ -170,3 +170,12 @@
 - Tests run: 162 local tests, offline wheel/sdist build, CLI help and `git diff --check` passed; both PNGs were inspected and README paths resolved. GitHub image read-back follows push.
 - Open issues: screenshots demonstrate appearance, not visual-regression coverage.
 - Next action: verify previews and links, push docs-only change, confirm GitHub README images load.
+
+## 2026-09-23 — Worked README example
+
+- Task: Show a realistic, copyable use case for the released CLI and explain agent routing.
+- Decisions: add `examples/quarterly-review.json` with illustrative support-ticket figures and a two-slide native PPTX chart; document the exact validate/build/verify flow in `README.md`. The existing `office-artifact-engineering` skill covers tool choice; do not add an overlapping project-specific Hermes skill without repeated need.
+- Files changed: `README.md`, `examples/quarterly-review.json`, `PROJECT_LOG.md`.
+- Tests run: the v0.2.0 wheel downloaded from PyPI's version-specific JSON, SHA-256 checked and installed in a fresh Python 3.12 environment; example validated, built, structurally verified (2 slides, 3 text shapes) and LibreOffice-rendered to a two-page PDF. Full 162-test suite, offline build, CLI help and `git diff --check` passed.
+- Open issues: a single-series `chart` spec validates but crashes in the v0.2.0 renderer when `chart.legend` is absent. This example uses two series, so it works with the published release; address the renderer defect separately with a regression test before the next package release. PyPI's Simple index responded with an older cache during one fresh-install attempt; the version-specific artifact check succeeded.
+- Next action: finish gates, push README and example, check exact remote files and CI.

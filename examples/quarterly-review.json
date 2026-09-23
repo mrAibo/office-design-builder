@@ -1,0 +1,21 @@
+{
+  "version": "1",
+  "title": "Quarterly support review",
+  "slides": [
+    {
+      "layout": "title",
+      "title": "Quarterly support review",
+      "subtitle": "Sample figures for a team meeting"
+    },
+    {
+      "layout": "chart",
+      "title": "Support tickets by month",
+      "chart_type": "column",
+      "categories": ["April", "May", "June"],
+      "series": [
+        {"name": "Resolved tickets", "values": [24, 31, 36]},
+        {"name": "Open tickets", "values": [7, 5, 4]}
+      ]
+    }
+  ]
+}

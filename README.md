@@ -102,6 +102,22 @@ uv run --offline odb verify document.docx
 
 The top level requires `version`, `title`, and a nonempty `blocks` array. Each ordered block is a one-key object: `{"heading": {"text": "...", "level": 1}}` (level 1–3), `{"paragraph": {"text": "..."}}`, `{"bullets": {"items": ["..."]}}`, `{"table": {"columns": ["...", "..."], "rows": [["...", "..."]]}}`, or `{"image": {"path": "assets/example.png", "alt": "..."}}`. Image paths are local PNG/JPEG files relative to the JSON specification; no URLs, absolute paths, or traversal. Fonts and colors come from the same style fingerprint used for PPTX, while its slide canvas is not a Word page size. Text, lists, and tables remain native editable Word elements; images are embedded. `verify` checks structure rather than visual quality.
 
+## A concrete use case: team review slides
+
+Say you need two slides for a support team's quarterly meeting: a title slide and a chart of resolved versus open tickets for April, May, and June. All figures in [`examples/quarterly-review.json`](examples/quarterly-review.json) are illustrative; replace the title, months, and values with your own data. The chart is a native PowerPoint object, so colleagues can edit it after delivery.
+
+From a cloned repository with the [development environment](#development-setup) installed, run:
+
+```bash
+uv run --offline odb validate examples/quarterly-review.json
+uv run --offline odb build examples/quarterly-review.json \
+  --fingerprint examples/style-fingerprint.json \
+  --output quarterly-review.pptx
+uv run --offline odb verify quarterly-review.pptx
+```
+
+`verify` reports `{"editable_text_shapes": 3, "slide_count": 2}` for this example. Open `quarterly-review.pptx` in PowerPoint or LibreOffice Impress and check the chart and line breaks before sharing it. To change the look, edit the palette and font names in [`examples/style-fingerprint.json`](examples/style-fingerprint.json), then rebuild. The fingerprint is a reviewed design input; `odb` does not infer a finished report from a prompt or turn a screenshot into a pixel-perfect slide. For a written report, use the separate [DOCX example](#docx-example).
+
 ## Typical workflow
 
 ### 1. Create a style fingerprint
